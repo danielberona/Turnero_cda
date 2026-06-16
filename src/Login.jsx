@@ -20,9 +20,7 @@ export default function Login() {
       <div style={{ width: 400, background: '#FFFFFF', border: '1px solid #E9EDF3', borderRadius: 20, padding: 36, boxShadow: '0 4px 24px rgba(16,24,40,.07)' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 13, background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>LC</span>
-          </div>
+          <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 48, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A' }}>CDA La Cordialidad</div>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#7A8696', letterSpacing: '.1em', textTransform: 'uppercase' }}>Panel del operario</div>

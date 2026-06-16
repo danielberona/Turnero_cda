@@ -120,9 +120,7 @@ export default function PanelAdmin({ onLogout }) {
         {/* ── Header ──────────────────────────────────────── */}
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 15, background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontWeight: 800, fontSize: 18, color: '#fff' }}>LC</span>
-            </div>
+            <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 52, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-.01em', whiteSpace: 'nowrap' }}>CDA La Cordialidad</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: '#7A8696', letterSpacing: '.12em', textTransform: 'uppercase' }}>Panel del operario</span>

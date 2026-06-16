@@ -144,9 +144,7 @@ export default function PantallaTV() {
         {/* ── Header ────────────────────────────────────────── */}
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div style={{ width: 66, height: 66, borderRadius: 18, background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontWeight: 800, fontSize: 22, letterSpacing: '.02em', color: '#fff' }}>LC</span>
-            </div>
+            <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 66, width: 'auto', objectFit: 'contain' }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: 27, fontWeight: 800, color: '#0F172A', letterSpacing: '-.01em' }}>CDA La Cordialidad</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: '#7A8696', letterSpacing: '.16em', textTransform: 'uppercase' }}>Centro de Diagnóstico Automotor</span>
