@@ -114,7 +114,7 @@ export default function PanelAdmin({ onLogout }) {
   const totalWaiting = ['A', 'R', 'B', 'V'].reduce((a, k) => a + queues[k].length, 0)
 
   return (
-    <div style={{ minWidth: 1280, minHeight: '100vh', background: '#F3F5F9', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: '#0F172A', padding: '28px 32px 40px' }}>
+    <div style={{ minWidth: 1280, minHeight: '100vh', background: '#FFFBEB', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: '#0F172A', padding: '28px 32px 40px' }}>
       <div style={{ maxWidth: 1500, margin: '0 auto' }}>
 
         {/* ── Header ──────────────────────────────────────── */}

@@ -128,8 +128,8 @@ export default function PantallaTV() {
 
   // ── Styles ──────────────────────────────────────────────────
   const S = {
-    root:  { width: '100vw', height: '100vh', overflow: 'hidden', background: '#EEF1F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
-    stage: { width: 1920, height: 1080, flexShrink: 0, transformOrigin: 'center', background: '#EEF1F6', padding: '56px 56px 48px', display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 36 },
+    root:  { width: '100vw', height: '100vh', overflow: 'hidden', background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+    stage: { width: 1920, height: 1080, flexShrink: 0, transformOrigin: 'center', background: '#FFFBEB', padding: '56px 56px 48px', display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 36 },
     card:  { background: '#FFFFFF', border: '1px solid #E7EBF2', boxShadow: '0 4px 18px rgba(16,24,40,.06)' },
   }
 
