@@ -57,7 +57,8 @@ export default function PantallaEspera() {
   const fitStage = () => {
     const el = stageRef.current
     if (!el) return
-    el.style.transform = `scale(${Math.min(window.innerWidth / 1920, window.innerHeight / 1080)})`
+    const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080)
+    el.style.transform = `translate(-50%, -50%) scale(${s})`
   }
 
   // ── Carga datos de Supabase ───────────────────────────────────────────────
@@ -120,7 +121,7 @@ export default function PantallaEspera() {
   const cat = current ? CATS[current.codigo] : null
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: D.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: D.bg, position: 'relative', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
 
       {/* Flash de color al cambiar turno */}
       {cat && (
@@ -133,7 +134,7 @@ export default function PantallaEspera() {
       {/* Stage 1920×1080 */}
       <div
         ref={stageRef}
-        style={{ width: 1920, height: 1080, flexShrink: 0, transformOrigin: 'center', background: D.bg, display: 'grid', gridTemplateRows: 'auto 1fr auto' }}
+        style={{ width: 1920, height: 1080, position: 'absolute', top: '50%', left: '50%', transformOrigin: 'center center', background: D.bg, display: 'grid', gridTemplateRows: 'auto 1fr auto' }}
       >
 
         {/* ── Header — integrado, sin card flotante ────────────── */}
