@@ -3,10 +3,10 @@ import { supabase } from './supabase'
 import { CATS, AVISOS, codigoDisplay } from './constants'
 
 export default function PantallaTV() {
-  const [history, setHistory]   = useState([])
-  const [waiting, setWaiting]   = useState({ A: 0, R: 0, B: 0, V: 0 })
-  const [avisoIdx, setAvisoIdx] = useState(0)
-  const [clock, setClock]       = useState({ time: '', date: '' })
+  const [history, setHistory]       = useState([])
+  const [waitingList, setWaitingList] = useState([])
+  const [avisoIdx, setAvisoIdx]     = useState(0)
+  const [clock, setClock]           = useState({ time: '', date: '' })
 
   const stageRef    = useRef(null)
   const heroRef     = useRef(null)
@@ -32,8 +32,9 @@ export default function PantallaTV() {
         .limit(6),
       supabase
         .from('turnos')
-        .select('codigo')
-        .eq('estado', 'esperando'),
+        .select('*')
+        .eq('estado', 'esperando')
+        .order('creado_en', { ascending: true }),
     ])
 
     if (turnos) {
@@ -45,11 +46,7 @@ export default function PantallaTV() {
       }
     }
 
-    if (espera) {
-      const counts = { A: 0, R: 0, B: 0, V: 0 }
-      espera.forEach(t => { if (t.codigo in counts) counts[t.codigo]++ })
-      setWaiting(counts)
-    }
+    if (espera) setWaitingList(espera)
   }
 
   // ── Animations (imperative, same logic as prototype) ────────
@@ -127,7 +124,6 @@ export default function PantallaTV() {
   }, [])
 
   const cur    = history[0]
-  const last3  = history.slice(1, 4)
   const curCat = cur ? CATS[cur.codigo] : null
 
   // ── Styles ──────────────────────────────────────────────────
@@ -194,51 +190,54 @@ export default function PantallaTV() {
             )}
           </section>
 
-          {/* Right column */}
-          <aside style={{ display: 'grid', gridTemplateRows: 'auto 1fr', gap: 36, minHeight: 0 }}>
+          {/* Cola en espera — ocupa todo el lado derecho */}
+          <aside style={{ ...S.card, borderRadius: 28, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
 
-            {/* Últimos llamados */}
-            <div style={{ ...S.card, borderRadius: 28, padding: '32px 36px' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#1A2230', marginBottom: 14 }}>Últimos llamados</div>
-              {last3.length === 0
-                ? <div style={{ padding: '20px 0', fontSize: 20, color: '#8A94A3' }}>Aún no hay llamados.</div>
-                : last3.map(t => {
-                  const cat = CATS[t.codigo]
-                  return (
-                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 22, padding: '18px 0', borderTop: '1px solid #EFF1F5' }}>
-                      <span style={{ minWidth: 118, fontSize: 36, fontWeight: 800, color: cat.color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.01em' }}>
-                        {codigoDisplay(t)}
-                      </span>
-                      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <span style={{ fontSize: 23, fontWeight: 600, color: '#2A3342', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</span>
-                        <span style={{ fontSize: 18, color: '#8A94A3', fontFamily: 'ui-monospace, monospace', letterSpacing: '.05em' }}>{t.placa_vehiculo}</span>
-                      </div>
-                    </div>
-                  )
-                })
-              }
+            {/* Encabezado */}
+            <div style={{ padding: '28px 32px 20px', borderBottom: '1px solid #EFF1F5', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontSize: 24, fontWeight: 800, color: '#1A2230' }}>En espera</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#8A94A3' }}>{waitingList.length} turnos</span>
             </div>
 
-            {/* En espera por categoría */}
-            <div style={{ ...S.card, borderRadius: 28, padding: '28px 32px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#1A2230', marginBottom: 18 }}>En espera por categoría</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, flex: 1, minHeight: 0 }}>
-                {['A', 'R', 'B', 'V'].map(k => {
-                  const c = CATS[k]
-                  return (
-                    <div key={k} style={{ background: '#F7F9FC', border: '1px solid #ECEFF4', borderRadius: 20, padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                        <span style={{ width: 34, height: 34, borderRadius: 10, background: c.color + '1A', border: `1px solid ${c.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18, color: c.color, flexShrink: 0 }}>{k}</span>
-                        <span style={{ fontSize: 15, fontWeight: 600, color: '#6B7585', lineHeight: 1.15 }}>{c.short}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginTop: 10 }}>
-                        <span style={{ fontSize: 46, fontWeight: 800, color: '#1A2230', lineHeight: .85, fontVariantNumeric: 'tabular-nums' }}>{waiting[k]}</span>
-                        <span style={{ fontSize: 14, color: '#8A94A3', marginBottom: 7 }}>en espera</span>
-                      </div>
+            {/* Lista scrolleable */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 20px' }}>
+              {waitingList.length === 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 22, color: '#8A94A3', fontWeight: 600 }}>
+                  Sin turnos en espera
+                </div>
+              ) : waitingList.map(t => {
+                const cat = CATS[t.codigo]
+                return (
+                  <div
+                    key={t.id}
+                    style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '18px 16px', borderRadius: 18, borderBottom: '1px solid #F0F2F6' }}
+                  >
+                    {/* Barra de color de categoría */}
+                    <div style={{ width: 8, height: 52, borderRadius: 99, background: cat.color, flexShrink: 0 }} />
+
+                    {/* Código del turno */}
+                    <span style={{ fontSize: 38, fontWeight: 800, color: cat.color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.01em', minWidth: 110, flexShrink: 0 }}>
+                      {codigoDisplay(t)}
+                    </span>
+
+                    {/* Nombre y placa */}
+                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <span style={{ fontSize: 24, fontWeight: 700, color: '#1A2230', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {t.nombre_cliente}
+                      </span>
+                      <span style={{ fontSize: 20, fontFamily: 'ui-monospace, monospace', fontWeight: 700, letterSpacing: '.1em', color: '#5A6475', background: '#F1F3F7', border: '1px solid #DDE3EC', borderRadius: 8, padding: '3px 12px', alignSelf: 'flex-start' }}>
+                        {t.placa_vehiculo}
+                      </span>
                     </div>
-                  )
-                })}
-              </div>
+
+                    {/* Pill de categoría */}
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 999, background: cat.color + '18', border: `1px solid ${cat.color}40` }}>
+                      <span style={{ width: 10, height: 10, borderRadius: 3, background: cat.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 16, fontWeight: 700, color: cat.color, whiteSpace: 'nowrap' }}>{cat.short}</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
           </aside>
