@@ -156,14 +156,14 @@ export default function PantallaEspera() {
         </header>
 
         {/* ── Main ────────────────────────────────────────────────── */}
-        <main style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 32, padding: '32px 56px', minHeight: 0, background: '#F1F5F9' }}>
+        <main style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 32, padding: '32px 56px', minHeight: 0, background: '#EEF2F7' }}>
 
           {/* Hero — turno actual */}
           <section
             key={`hero-${heroKey}`}
-            style={{ background: D.surf, border: `1px solid ${D.border}`, borderLeft: `8px solid ${cat ? cat.color : D.border}`, borderRadius: 22, padding: '52px 60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', animation: 'heroIn .60s cubic-bezier(.2,.75,.2,1) both', boxShadow: `0 2px 16px ${D.shadow}`, position: 'relative' }}
+            style={{ background: cat ? cat.color + '0A' : D.surf, borderRadius: 22, padding: '52px 60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', animation: 'heroIn .60s cubic-bezier(.2,.75,.2,1) both', boxShadow: '0 4px 24px rgba(15,23,42,.08)', position: 'relative' }}
           >
-            {cat && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${cat.color}05 0%, transparent 55%)`, pointerEvents: 'none', borderRadius: 'inherit' }} />}
+            {cat && <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 80% 70% at 20% 50%, ${cat.color}10 0%, transparent 70%)`, pointerEvents: 'none', borderRadius: 'inherit' }} />}
 
             <div style={{ position: 'relative' }}>
               {current ? (
@@ -204,7 +204,7 @@ export default function PantallaEspera() {
           </section>
 
           {/* Lista de espera */}
-          <aside style={{ background: D.surf, border: `1px solid ${D.border}`, borderRadius: 22, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', boxShadow: `0 2px 16px ${D.shadow}` }}>
+          <aside style={{ background: D.surf, borderRadius: 22, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', boxShadow: '0 4px 24px rgba(15,23,42,.08)' }}>
             <div style={{ padding: '24px 28px 18px', borderBottom: `1px solid ${D.border}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexShrink: 0 }}>
               <span style={{ fontSize: 22, fontWeight: 800, color: D.txt }}>En espera</span>
               <span style={{ fontSize: 16, fontWeight: 700, color: D.txt3, fontVariantNumeric: 'tabular-nums' }}>{waiting.length} turnos</span>
