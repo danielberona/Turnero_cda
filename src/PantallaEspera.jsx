@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
+import { supabase } from './supabase'
 
-// ── Paleta clínica — blanco limpio ──────────────────────────────────────────
+// ── Paleta clínica ───────────────────────────────────────────────────────────
 const D = {
-  bg:     '#EEF2F7',   // fondo gris-azulado muy suave
-  surf:   '#FFFFFF',   // blanco puro
-  surf2:  '#F8FAFC',   // gris clarísimo para áreas internas
-  border: '#DDE3EC',   // borde claro
-  border2:'#C8D3E0',   // borde un poco más visible
-  txt:    '#0F172A',   // casi negro
-  txt2:   '#475569',   // gris medio
-  txt3:   '#94A3B8',   // gris claro
-  shadow: 'rgba(15,23,42,.07)',
+  bg:     '#FFFFFF',   // fondo blanco total — sin panel flotante
+  surf:   '#FFFFFF',
+  surf2:  '#F8FAFC',
+  border: '#E2E8F0',
+  border2:'#CBD5E1',
+  txt:    '#0F172A',
+  txt2:   '#475569',
+  txt3:   '#94A3B8',
+  shadow: 'rgba(15,23,42,.06)',
 }
 
 const CATS = {
@@ -31,160 +32,193 @@ const AVISOS = [
 const pad  = (n) => String(n).padStart(2, '0')
 const code = (t) => `${t.codigo}-${pad(t.numero)}`
 
-// ── Mock — rota cada 8 s para demostrar animaciones ─────────────────────────
-const MOCK_TURNS = [
-  { id: 't1', codigo: 'A', numero: 5, nombre_cliente: 'Roberto Fernández', placa_vehiculo: 'PQR-111' },
-  { id: 't2', codigo: 'R', numero: 2, nombre_cliente: 'Ana Rodríguez',     placa_vehiculo: 'JKL-654' },
-  { id: 't3', codigo: 'B', numero: 1, nombre_cliente: 'Pedro Sánchez',     placa_vehiculo: 'STU-987' },
-  { id: 't4', codigo: 'V', numero: 1, nombre_cliente: 'Diana Morales',     placa_vehiculo: 'VWX-222' },
-  { id: 't5', codigo: 'A', numero: 6, nombre_cliente: 'Sofía Herrera',     placa_vehiculo: 'MNO-555' },
-]
-const MOCK_WAITING = [
-  { id: 'w1', codigo: 'A', numero: 6, nombre_cliente: 'Sofía Herrera',   placa_vehiculo: 'MNO-555' },
-  { id: 'w2', codigo: 'R', numero: 3, nombre_cliente: 'Pablo Gómez',     placa_vehiculo: 'ABC-321' },
-  { id: 'w3', codigo: 'A', numero: 7, nombre_cliente: 'Juan López',      placa_vehiculo: 'DEF-456' },
-  { id: 'w4', codigo: 'B', numero: 2, nombre_cliente: 'Luis Torres',     placa_vehiculo: 'GHI-789' },
-  { id: 'w5', codigo: 'V', numero: 2, nombre_cliente: 'Carmen Silva',    placa_vehiculo: 'JKL-000' },
-  { id: 'w6', codigo: 'A', numero: 8, nombre_cliente: 'Carlos Torres',   placa_vehiculo: 'XYZ-111' },
-]
+// Reloj en formato 12 h → "3:45 PM"
+const fmt12h = (d) => {
+  const h    = d.getHours()
+  const m    = pad(d.getMinutes())
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12  = h % 12 || 12
+  return `${h12}:${m} ${ampm}`
+}
 
 export default function PantallaEspera() {
-  const [turnIdx,  setTurnIdx]  = useState(0)
-  const [heroKey,  setHeroKey]  = useState(0)
-  const [flashKey, setFlashKey] = useState(0)
-  const [avisoIdx, setAvisoIdx] = useState(0)
-  const [avisoKey, setAvisoKey] = useState(0)
-  const [clock,    setClock]    = useState({ time: '', date: '' })
+  const [current, setCurrent]  = useState(null)
+  const [waiting, setWaiting]  = useState([])
+  const [heroKey,  setHeroKey] = useState(0)
+  const [flashKey, setFlashKey]= useState(0)
+  const [avisoIdx, setAvisoIdx]= useState(0)
+  const [avisoKey, setAvisoKey]= useState(0)
+  const [clock,    setClock]   = useState({ time: '', date: '' })
 
-  const stageRef = useRef(null)
+  const stageRef    = useRef(null)
+  const prevIdRef   = useRef(null)
 
+  // ── Escala 1920×1080 → ventana ───────────────────────────────────────────
   const fitStage = () => {
     const el = stageRef.current
     if (!el) return
-    const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080)
-    el.style.transform = `scale(${s})`
+    el.style.transform = `scale(${Math.min(window.innerWidth / 1920, window.innerHeight / 1080)})`
+  }
+
+  // ── Carga datos de Supabase ───────────────────────────────────────────────
+  const loadData = async () => {
+    const [{ data: llamados }, { data: espera }] = await Promise.all([
+      supabase
+        .from('turnos').select('*').eq('estado', 'llamado')
+        .order('llamado_en', { ascending: false }).limit(1),
+      supabase
+        .from('turnos').select('*').eq('estado', 'esperando')
+        .order('creado_en', { ascending: true }),
+    ])
+
+    const nuevo = llamados?.[0] ?? null
+    if (nuevo?.id !== prevIdRef.current) {
+      prevIdRef.current = nuevo?.id ?? null
+      setHeroKey(k => k + 1)
+      if (nuevo) setFlashKey(k => k + 1)
+    }
+    setCurrent(nuevo)
+    setWaiting(espera ?? [])
   }
 
   useEffect(() => {
     fitStage()
     window.addEventListener('resize', fitStage)
+    loadData()
 
-    const tickClock = () => {
+    // Reloj
+    const clockT = setInterval(() => {
       const now = new Date()
       const d   = now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
-      setClock({ time: now.toLocaleTimeString('es-CO', { hour12: false }), date: d.charAt(0).toUpperCase() + d.slice(1) })
-    }
-    tickClock()
-    const clockT = setInterval(tickClock, 1000)
+      setClock({ time: fmt12h(now), date: d.charAt(0).toUpperCase() + d.slice(1) })
+    }, 1000)
 
-    const turnT  = setInterval(() => {
-      setTurnIdx(i => { const n = (i + 1) % MOCK_TURNS.length; setHeroKey(k => k + 1); setFlashKey(k => k + 1); return n })
-    }, 8000)
+    // Primer tick inmediato
+    const now0 = new Date()
+    const d0   = now0.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+    setClock({ time: fmt12h(now0), date: d0.charAt(0).toUpperCase() + d0.slice(1) })
 
+    // Avisos
     const avisoT = setInterval(() => {
-      setAvisoIdx(i => (i + 1) % AVISOS.length); setAvisoKey(k => k + 1)
+      setAvisoIdx(i => (i + 1) % AVISOS.length)
+      setAvisoKey(k => k + 1)
     }, 7000)
+
+    // Realtime
+    const canal = supabase.channel('tv-espera')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos' }, loadData)
+      .subscribe()
 
     return () => {
       window.removeEventListener('resize', fitStage)
-      clearInterval(clockT); clearInterval(turnT); clearInterval(avisoT)
+      clearInterval(clockT)
+      clearInterval(avisoT)
+      canal.unsubscribe()
     }
   }, [])
 
-  const cur = MOCK_TURNS[turnIdx]
-  const cat = CATS[cur.codigo]
+  const cat = current ? CATS[current.codigo] : null
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: D.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
 
-      {/* Flash sutil al cambiar turno */}
-      <div
-        key={`flash-${flashKey}`}
-        style={{ position: 'fixed', inset: 0, background: cat.color, pointerEvents: 'none', zIndex: 100, animation: 'flashScreen .5s ease-out forwards', opacity: 0 }}
-      />
+      {/* Flash de color al cambiar turno */}
+      {cat && (
+        <div
+          key={`flash-${flashKey}`}
+          style={{ position: 'fixed', inset: 0, background: cat.color, pointerEvents: 'none', zIndex: 100, animation: 'flashScreen .5s ease-out forwards' }}
+        />
+      )}
 
-      {/* Stage 1920×1080 escalable */}
+      {/* Stage 1920×1080 */}
       <div
         ref={stageRef}
         style={{ width: 1920, height: 1080, flexShrink: 0, transformOrigin: 'center', background: D.bg, display: 'grid', gridTemplateRows: 'auto 1fr auto' }}
       >
 
-        {/* ── Header ──────────────────────────────────────────────── */}
-        <header style={{ background: D.surf, borderBottom: `1px solid ${D.border}`, padding: '0 56px', height: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxShadow: `0 1px 6px ${D.shadow}` }}>
+        {/* ── Header — integrado, sin card flotante ────────────── */}
+        <header style={{ padding: '0 56px', height: 96, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `2px solid ${D.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-            <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 58, width: 'auto', objectFit: 'contain', display: 'block' }} />
+            <img src="/logocda.png" alt="CDA" style={{ height: 56, width: 'auto', objectFit: 'contain', display: 'block' }} />
             <div style={{ width: 1, height: 40, background: D.border }} />
             <div>
               <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-.03em', color: D.txt }}>CDA La Cordialidad</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: D.txt3, letterSpacing: '.18em', textTransform: 'uppercase', marginTop: 3 }}>Centro de Diagnóstico Automotor</div>
             </div>
           </div>
+
+          {/* Reloj 12 h */}
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 58, fontWeight: 900, fontFamily: 'ui-monospace, monospace', fontVariantNumeric: 'tabular-nums', letterSpacing: '.04em', color: D.txt, lineHeight: 1 }}>{clock.time}</div>
+            <div style={{ fontSize: 52, fontWeight: 900, fontFamily: 'ui-monospace, monospace', fontVariantNumeric: 'tabular-nums', color: D.txt, lineHeight: 1 }}>{clock.time}</div>
             <div style={{ fontSize: 15, fontWeight: 600, color: D.txt3, marginTop: 5 }}>{clock.date}</div>
           </div>
         </header>
 
         {/* ── Main ────────────────────────────────────────────────── */}
-        <main style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 32, padding: '32px 56px', minHeight: 0 }}>
+        <main style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 32, padding: '32px 56px', minHeight: 0, background: '#F1F5F9' }}>
 
           {/* Hero — turno actual */}
           <section
             key={`hero-${heroKey}`}
-            style={{ background: D.surf, border: `1px solid ${D.border}`, borderLeft: `8px solid ${cat.color}`, borderRadius: 24, padding: '52px 60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', animation: 'heroIn .60s cubic-bezier(.2,.75,.2,1) both', boxShadow: `0 4px 24px ${D.shadow}`, position: 'relative' }}
+            style={{ background: D.surf, border: `1px solid ${D.border}`, borderLeft: `8px solid ${cat ? cat.color : D.border}`, borderRadius: 22, padding: '52px 60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', animation: 'heroIn .60s cubic-bezier(.2,.75,.2,1) both', boxShadow: `0 2px 16px ${D.shadow}`, position: 'relative' }}
           >
-            {/* Tinte ambiental muy suave del color */}
-            <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${cat.color}05 0%, transparent 60%)`, pointerEvents: 'none', borderRadius: 'inherit' }} />
+            {cat && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${cat.color}05 0%, transparent 55%)`, pointerEvents: 'none', borderRadius: 'inherit' }} />}
 
             <div style={{ position: 'relative' }}>
-              <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '.28em', textTransform: 'uppercase', color: D.txt3 }}>Turno en llamado</div>
+              {current ? (
+                <>
+                  <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '.28em', textTransform: 'uppercase', color: D.txt3 }}>Turno en llamado</div>
 
-              {/* Número gigante */}
-              <div style={{ marginTop: 6, fontSize: 210, lineHeight: .86, fontWeight: 900, color: cat.color, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
-                {code(cur)}
-              </div>
-
-              {/* Categoría */}
-              <div style={{ marginTop: 22, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 11, padding: '10px 20px', borderRadius: 999, background: cat.color + '10', border: `1.5px solid ${cat.color}30` }}>
-                <span style={{ width: 9, height: 9, borderRadius: 3, background: cat.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 20, fontWeight: 800, color: cat.color }}>{cat.name}</span>
-              </div>
-
-              {/* Divider */}
-              <div style={{ marginTop: 38, height: 1, background: D.border }} />
-
-              {/* Info cliente */}
-              <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr auto', gap: 36, alignItems: 'end' }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Cliente</div>
-                  <div style={{ fontSize: 44, fontWeight: 800, color: D.txt, lineHeight: 1.05, letterSpacing: '-.01em' }}>{cur.nombre_cliente}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Placa</div>
-                  <div style={{ padding: '10px 22px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 36, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
-                    {cur.placa_vehiculo}
+                  <div style={{ marginTop: 6, fontSize: 210, lineHeight: .86, fontWeight: 900, color: cat.color, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
+                    {code(current)}
                   </div>
+
+                  <div style={{ marginTop: 22, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 11, padding: '10px 20px', borderRadius: 999, background: cat.color + '10', border: `1.5px solid ${cat.color}30` }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 3, background: cat.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 20, fontWeight: 800, color: cat.color }}>{cat.name}</span>
+                  </div>
+
+                  <div style={{ marginTop: 38, height: 1, background: D.border }} />
+
+                  <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr auto', gap: 36, alignItems: 'end' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Cliente</div>
+                      <div style={{ fontSize: 44, fontWeight: 800, color: D.txt, lineHeight: 1.05, letterSpacing: '-.01em' }}>{current.nombre_cliente}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Placa</div>
+                      <div style={{ padding: '10px 22px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 36, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
+                        {current.placa_vehiculo}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 16 }}>
+                  <div style={{ fontSize: 100, fontWeight: 900, color: D.border, lineHeight: 1 }}>—</div>
+                  <div style={{ fontSize: 28, fontWeight: 600, color: D.txt3 }}>Sin turno activo</div>
                 </div>
-              </div>
+              )}
             </div>
           </section>
 
           {/* Lista de espera */}
-          <aside style={{ background: D.surf, border: `1px solid ${D.border}`, borderRadius: 24, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', boxShadow: `0 4px 24px ${D.shadow}` }}>
+          <aside style={{ background: D.surf, border: `1px solid ${D.border}`, borderRadius: 22, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', boxShadow: `0 2px 16px ${D.shadow}` }}>
             <div style={{ padding: '24px 28px 18px', borderBottom: `1px solid ${D.border}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexShrink: 0 }}>
               <span style={{ fontSize: 22, fontWeight: 800, color: D.txt }}>En espera</span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: D.txt3, fontVariantNumeric: 'tabular-nums' }}>{MOCK_WAITING.length} turnos</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: D.txt3, fontVariantNumeric: 'tabular-nums' }}>{waiting.length} turnos</span>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px 14px' }}>
-              {MOCK_WAITING.map((t, i) => {
+              {waiting.length === 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 20, color: D.txt3, fontWeight: 600 }}>
+                  Sin turnos en espera
+                </div>
+              ) : waiting.map((t, i) => {
                 const tc = CATS[t.codigo]
                 return (
                   <div key={t.id}
-                    style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '15px 14px', borderRadius: 14, borderBottom: i < MOCK_WAITING.length - 1 ? `1px solid ${D.border}` : 'none', transition: 'background .15s' }}
-                    onMouseOver={e => e.currentTarget.style.background = D.surf2}
-                    onMouseOut={e  => e.currentTarget.style.background = 'transparent'}
-                  >
+                    style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '15px 14px', borderRadius: 14, borderBottom: i < waiting.length - 1 ? `1px solid ${D.border}` : 'none' }}>
                     <div style={{ width: 5, height: 52, borderRadius: 99, background: tc.color, flexShrink: 0 }} />
                     <span style={{ fontSize: 32, fontWeight: 900, color: tc.color, fontVariantNumeric: 'tabular-nums', minWidth: 110, flexShrink: 0 }}>{code(t)}</span>
                     <div style={{ minWidth: 0, flex: 1 }}>
@@ -205,12 +239,12 @@ export default function PantallaEspera() {
         </main>
 
         {/* ── Footer — marquee ────────────────────────────────────── */}
-        <footer style={{ background: D.surf, borderTop: `1px solid ${D.border}`, height: 62, display: 'flex', alignItems: 'center', overflow: 'hidden', flexShrink: 0, boxShadow: `0 -1px 4px ${D.shadow}` }}>
+        <footer style={{ background: D.surf, borderTop: `2px solid ${D.border}`, height: 62, display: 'flex', alignItems: 'center', overflow: 'hidden', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '0 28px', borderRight: `1px solid ${D.border}`, flexShrink: 0, height: '100%' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F59E0B', animation: 'blink 1.6s ease-in-out infinite', flexShrink: 0 }} />
             <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: '#F59E0B', whiteSpace: 'nowrap' }}>Aviso</span>
           </div>
-          <div style={{ flex: 1, overflow: 'hidden', position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}>
+          <div style={{ flex: 1, overflow: 'hidden', height: '100%', display: 'flex', alignItems: 'center' }}>
             <span
               key={`aviso-${avisoKey}`}
               style={{ display: 'inline-block', whiteSpace: 'nowrap', fontSize: 21, fontWeight: 500, color: D.txt2, animation: 'marqueeScroll 26s linear forwards' }}

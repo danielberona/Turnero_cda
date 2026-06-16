@@ -1,25 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Car, Truck, GraduationCap, RefreshCcw,
   LogOut, X, Clock, Check, ChevronRight,
   Bell, Users,
 } from 'lucide-react'
+import { supabase, registrarTurno, llamarSiguiente, marcarAtendido } from './supabase'
 
-// ── Paleta clínica — blanco limpio ──────────────────────────────────────────
+// ── Paleta clínica ───────────────────────────────────────────────────────────
 const D = {
-  bg:     '#F0F4F8',   // fondo gris-azulado muy suave
-  surf:   '#FFFFFF',   // blanco puro
-  surf2:  '#F8FAFC',   // gris clarísimo para áreas internas
-  border: '#E2E8F0',   // borde gris claro
-  border2:'#CBD5E1',   // borde ligeramente más oscuro
-  txt:    '#0F172A',   // casi negro — máximo contraste
-  txt2:   '#475569',   // gris medio
-  txt3:   '#94A3B8',   // gris claro
-  muted:  '#E2E8F0',   // tono apagado
+  bg:     '#F0F4F8',
+  surf:   '#FFFFFF',
+  surf2:  '#F8FAFC',
+  border: '#E2E8F0',
+  border2:'#CBD5E1',
+  txt:    '#0F172A',
+  txt2:   '#475569',
+  txt3:   '#94A3B8',
+  muted:  '#E2E8F0',
   shadow: 'rgba(15,23,42,.06)',
 }
 
-// ── Categorías ───────────────────────────────────────────────────────────────
 const CATS = {
   A: { color: '#F59E0B', name: 'Motos y Autos',   short: 'Autos',     Icon: Car,           label: 'Motos y Autos' },
   R: { color: '#EF4444', name: 'Segunda Revisión', short: 'Revisión',  Icon: RefreshCcw,    label: 'Segunda Revisión' },
@@ -30,73 +30,73 @@ const CATS = {
 const pad  = (n) => String(n).padStart(2, '0')
 const code = (t) => `${t.codigo}-${pad(t.numero)}`
 
-// ── Mock data ────────────────────────────────────────────────────────────────
-let _nextId   = 100
-let _counters = { A: 8, R: 3, B: 2, V: 1 }
-
-const INIT_QUEUES = {
-  A: [
-    { id: '2', codigo: 'A', numero: 2, nombre_cliente: 'María García',   placa_vehiculo: 'XYZ-789' },
-    { id: '3', codigo: 'A', numero: 3, nombre_cliente: 'Juan López',     placa_vehiculo: 'DEF-456' },
-    { id: '4', codigo: 'A', numero: 4, nombre_cliente: 'Laura Jiménez',  placa_vehiculo: 'GHI-321' },
-    { id: '5', codigo: 'A', numero: 5, nombre_cliente: 'Sofía Herrera',  placa_vehiculo: 'MNO-555' },
-  ],
-  R: [
-    { id: '6', codigo: 'R', numero: 1, nombre_cliente: 'Ana Rodríguez',  placa_vehiculo: 'JKL-654' },
-    { id: '7', codigo: 'R', numero: 2, nombre_cliente: 'Pablo Gómez',    placa_vehiculo: 'PQR-777' },
-  ],
-  B: [
-    { id: '8', codigo: 'B', numero: 1, nombre_cliente: 'Pedro Sánchez',  placa_vehiculo: 'STU-100' },
-  ],
-  V: [],
-}
-
-const INIT_CURRENT = {
-  A: { id: '1', codigo: 'A', numero: 1, nombre_cliente: 'Carlos Martínez', placa_vehiculo: 'ABC-123' },
-  R: null,
-  B: null,
-  V: null,
-}
-
-// ── Componente ───────────────────────────────────────────────────────────────
 export default function PanelAdmin({ onLogout }) {
-  const [queues,       setQueues]       = useState(INIT_QUEUES)
-  const [current,      setCurrent]      = useState(INIT_CURRENT)
+  const [queues,       setQueues]       = useState({ A: [], R: [], B: [], V: [] })
+  const [current,      setCurrent]      = useState({ A: null, R: null, B: null, V: null })
   const [plate,        setPlate]        = useState('')
   const [name,         setName]         = useState('')
   const [cedula,       setCedula]       = useState('')
   const [selCat,       setSelCat]       = useState('')
   const [lastAssigned, setLastAssigned] = useState(null)
+  const [loading,      setLoading]      = useState(false)
   const [time,         setTime]         = useState('')
 
-  useEffect(() => {
-    const tick = () => setTime(new Date().toLocaleTimeString('es-CO', { hour12: false }))
-    tick()
-    const t = setInterval(tick, 1000)
-    return () => clearInterval(t)
+  // ── Carga datos ────────────────────────────────────────────────────────────
+  const loadData = useCallback(async () => {
+    const [{ data: esperando }, { data: llamados }] = await Promise.all([
+      supabase.from('turnos').select('*').eq('estado', 'esperando').order('creado_en'),
+      supabase.from('turnos').select('*').eq('estado', 'llamado'),
+    ])
+    const qs = { A: [], R: [], B: [], V: [] }
+    esperando?.forEach(t => { if (t.codigo in qs) qs[t.codigo].push(t) })
+    setQueues(qs)
+    const cur = { A: null, R: null, B: null, V: null }
+    llamados?.forEach(t => { cur[t.codigo] = t })
+    setCurrent(cur)
   }, [])
+
+  useEffect(() => {
+    loadData()
+    const tick = () => {
+      const d = new Date()
+      const h = d.getHours(), m = pad(d.getMinutes())
+      setTime(`${h % 12 || 12}:${m} ${h >= 12 ? 'PM' : 'AM'}`)
+    }
+    tick()
+    const clockT = setInterval(tick, 1000)
+    const canal  = supabase.channel('admin-panel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos' }, loadData)
+      .subscribe()
+    return () => { clearInterval(clockT); canal.unsubscribe() }
+  }, [loadData])
 
   const totalWaiting = Object.values(queues).reduce((a, q) => a + q.length, 0)
 
-  const handleLlamar = (k) => {
-    const q = queues[k]; if (!q.length) return
-    setCurrent(c => ({ ...c, [k]: q[0] }))
-    setQueues(q2 => ({ ...q2, [k]: q2[k].slice(1) }))
-  }
-  const handleCancelar          = (k)      => setCurrent(c => ({ ...c, [k]: null }))
-  const handleRemoveFromQueue   = (k, id)  => setQueues(q => ({ ...q, [k]: q[k].filter(t => t.id !== id) }))
-
-  const handleAssign = () => {
-    if (!plate.trim() || !name.trim() || !selCat) return
-    _counters[selCat] = (_counters[selCat] || 0) + 1
-    const t = { id: String(++_nextId), codigo: selCat, numero: _counters[selCat], nombre_cliente: name.trim(), placa_vehiculo: plate.trim().toUpperCase() }
-    setQueues(q => ({ ...q, [selCat]: [...q[selCat], t] }))
-    setLastAssigned(t)
-    setPlate(''); setName(''); setCedula(''); setSelCat('')
-    setTimeout(() => setLastAssigned(null), 4000)
+  const handleAssign = async () => {
+    if (!plate.trim() || !name.trim() || !selCat || loading) return
+    setLoading(true)
+    try {
+      const cat   = CATS[selCat]
+      const turno = await registrarTurno({ placa: plate.trim().toUpperCase(), nombre: name.trim(), cedula: cedula.trim(), codigo: selCat, categoria: cat.label, color: cat.color })
+      setLastAssigned(turno)
+      setPlate(''); setName(''); setCedula(''); setSelCat('')
+      await loadData()
+      setTimeout(() => setLastAssigned(null), 4000)
+    } catch (e) { alert('Error al asignar turno: ' + e.message) }
+    finally { setLoading(false) }
   }
 
-  const canAssign = !!(plate.trim() && name.trim() && selCat)
+  const handleLlamar = async (k) => {
+    try { await llamarSiguiente(k); await loadData() }
+    catch { alert('No hay turnos en espera para esta categoría.') }
+  }
+
+  const handleCancelar = async (id) => {
+    try { await marcarAtendido(id); await loadData() }
+    catch (e) { alert('Error: ' + e.message) }
+  }
+
+  const canAssign = !!(plate.trim() && name.trim() && selCat && !loading)
 
   return (
     <div style={{ minHeight: '100vh', background: D.bg, color: D.txt, fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
@@ -134,7 +134,7 @@ export default function PanelAdmin({ onLogout }) {
         </div>
       </header>
 
-      {/* ── Layout principal ─────────────────────────────────────────── */}
+      {/* ── Layout ──────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1560, margin: '0 auto', padding: '28px 32px 52px', display: 'grid', gridTemplateColumns: '360px 1fr', gap: 24, alignItems: 'start' }}>
 
         {/* ── Formulario ──────────────────────────────────────────────── */}
@@ -195,13 +195,13 @@ export default function PanelAdmin({ onLogout }) {
 
             <button
               onClick={handleAssign} disabled={!canAssign}
-              style={{ width: '100%', marginTop: 4, padding: '13px', border: 'none', borderRadius: 11, fontFamily: 'inherit', fontSize: 14, fontWeight: 800, letterSpacing: '.01em', cursor: canAssign ? 'pointer' : 'not-allowed', transition: 'all .18s', background: canAssign ? '#F59E0B' : D.muted, color: canAssign ? '#1A1000' : D.txt3, boxShadow: canAssign ? '0 2px 10px rgba(245,158,11,.30)' : 'none' }}
-              onMouseOver={e => { if (canAssign) { e.currentTarget.style.background = '#D97706'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,.40)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-              onMouseOut={e  => { e.currentTarget.style.background = canAssign ? '#F59E0B' : D.muted; e.currentTarget.style.boxShadow = canAssign ? '0 2px 10px rgba(245,158,11,.30)' : 'none'; e.currentTarget.style.transform = 'none' }}
-              onMouseDown={e => { if (canAssign) { e.currentTarget.style.transform = 'scale(.98)' } }}
-              onMouseUp={e   => { if (canAssign) { e.currentTarget.style.transform = 'translateY(-1px)' } }}
+              style={{ width: '100%', marginTop: 4, padding: '13px', border: 'none', borderRadius: 11, fontFamily: 'inherit', fontSize: 14, fontWeight: 800, letterSpacing: '.01em', cursor: canAssign ? 'pointer' : 'not-allowed', transition: 'all .18s', background: canAssign ? '#F59E0B' : D.muted, color: canAssign ? '#1A1000' : D.txt3, boxShadow: canAssign ? '0 2px 10px rgba(245,158,11,.28)' : 'none' }}
+              onMouseOver={e => { if (canAssign) { e.currentTarget.style.background = '#D97706'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,.38)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+              onMouseOut={e  => { e.currentTarget.style.background = canAssign ? '#F59E0B' : D.muted; e.currentTarget.style.boxShadow = canAssign ? '0 2px 10px rgba(245,158,11,.28)' : 'none'; e.currentTarget.style.transform = 'none' }}
+              onMouseDown={e => { if (canAssign) e.currentTarget.style.transform = 'scale(.98)' }}
+              onMouseUp={e   => { if (canAssign) e.currentTarget.style.transform = 'translateY(-1px)' }}
             >
-              Asignar turno
+              {loading ? 'Asignando…' : 'Asignar turno'}
             </button>
 
             {lastAssigned && (
@@ -243,7 +243,6 @@ export default function PanelAdmin({ onLogout }) {
               return (
                 <div key={k} style={{ background: D.surf, border: `1px solid ${D.border}`, borderTop: `3px solid ${c.color}`, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: `0 2px 8px ${D.shadow}` }}>
 
-                  {/* Encabezado columna */}
                   <div style={{ padding: '14px 16px 12px', borderBottom: `1px solid ${D.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 9, background: c.color + '12', border: `1px solid ${c.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Icon size={16} color={c.color} />
@@ -262,7 +261,7 @@ export default function PanelAdmin({ onLogout }) {
                         En llamado
                       </div>
                       {cur && (
-                        <button onClick={() => handleCancelar(k)}
+                        <button onClick={() => handleCancelar(cur.id)}
                           style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', border: `1px solid ${D.border}`, borderRadius: 6, background: 'transparent', color: D.txt3, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}
                           onMouseOver={e => { e.currentTarget.style.borderColor = '#FCA5A5'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = '#FEF2F2' }}
                           onMouseOut={e  => { e.currentTarget.style.borderColor = D.border;  e.currentTarget.style.color = D.txt3;    e.currentTarget.style.background = 'transparent' }}>
@@ -290,14 +289,13 @@ export default function PanelAdmin({ onLogout }) {
                       style={{ width: '100%', padding: '11px', border: 'none', borderRadius: 10, fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: can ? 'pointer' : 'not-allowed', transition: 'all .18s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: can ? c.color : D.surf2, color: can ? '#fff' : D.txt3, boxShadow: can ? `0 2px 10px ${c.color}40` : 'none' }}
                       onMouseOver={e => { if (can) { e.currentTarget.style.boxShadow = `0 4px 16px ${c.color}55`; e.currentTarget.style.transform = 'translateY(-1px)' } }}
                       onMouseOut={e  => { e.currentTarget.style.boxShadow = can ? `0 2px 10px ${c.color}40` : 'none'; e.currentTarget.style.transform = 'none' }}
-                      onMouseDown={e => { if (can) e.currentTarget.style.transform = 'translateY(0) scale(.98)' }}
+                      onMouseDown={e => { if (can) e.currentTarget.style.transform = 'scale(.98)' }}
                       onMouseUp={e   => { if (can) e.currentTarget.style.transform = 'translateY(-1px)' }}>
                       <ChevronRight size={15} />
                       Llamar siguiente
                     </button>
                   </div>
 
-                  {/* Conteo en espera */}
                   <div style={{ padding: '0 12px 7px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: D.txt3 }}>En espera</span>
                     <span style={{ fontSize: 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: can ? c.color : D.txt3, background: can ? c.color + '10' : D.surf2, border: `1px solid ${can ? c.color + '25' : D.border}`, borderRadius: 999, padding: '2px 9px', textAlign: 'center', transition: 'all .2s' }}>{q.length}</span>
@@ -308,7 +306,7 @@ export default function PanelAdmin({ onLogout }) {
                       <div style={{ padding: '14px 8px', fontSize: 12, color: D.txt3, textAlign: 'center' }}>Sin turnos en espera</div>
                     ) : q.map(t => (
                       <div key={t.id}
-                        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 9, transition: 'background .12s', cursor: 'default' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 9, transition: 'background .12s' }}
                         onMouseOver={e => e.currentTarget.style.background = D.surf2}
                         onMouseOut={e  => e.currentTarget.style.background = 'transparent'}>
                         <span style={{ fontSize: 12, fontWeight: 800, color: c.color, fontVariantNumeric: 'tabular-nums', minWidth: 44, flexShrink: 0 }}>{code(t)}</span>
@@ -316,7 +314,7 @@ export default function PanelAdmin({ onLogout }) {
                           <div style={{ fontSize: 12, fontWeight: 600, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
                           <div style={{ fontSize: 11, color: D.txt3, fontFamily: 'ui-monospace, monospace' }}>{t.placa_vehiculo}</div>
                         </div>
-                        <button onClick={() => handleRemoveFromQueue(k, t.id)}
+                        <button onClick={() => handleCancelar(t.id)}
                           style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: D.txt3, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}
                           onMouseOver={e => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.color = '#EF4444' }}
                           onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = D.txt3 }}>
@@ -347,7 +345,7 @@ function Field({ label, children }) {
 function iStyle({ mono } = {}) {
   return {
     width: '100%', padding: '11px 13px',
-    border: `1px solid #E2E8F0`, borderRadius: 10,
+    border: '1px solid #E2E8F0', borderRadius: 10,
     background: '#F8FAFC', color: '#0F172A',
     fontSize: mono ? 16 : 14, fontWeight: mono ? 700 : 500,
     fontFamily: mono ? 'ui-monospace, monospace' : "'Plus Jakarta Sans', system-ui, sans-serif",
