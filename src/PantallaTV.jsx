@@ -94,31 +94,31 @@ export default function PantallaTV() {
   const cur    = history[0]
   const curCat = cur ? CATS[cur.codigo] : null
 
-  // Paleta
-  const BG      = '#FEFCE8'   // fondo general — amarillo muy suave
-  const DARK    = '#1E293B'   // azul oscuro corporativo
-  const YELLOW  = '#CA8A04'   // amarillo oscuro profesional
+  // Paleta — sin azul, amarillo intenso
+  const BG      = '#FEF08A'   // fondo amarillo medio
+  const HEADER  = '#F8DE22'   // barra superior amarillo fuerte
+  const FOOTER  = '#EAB308'   // barra inferior amarillo oscuro
   const CARD    = '#FFFFFF'
-  const BORDER  = '#EDE8D5'
+  const BORDER  = '#FDE68A'   // borde amarillo suave
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
       <div ref={stageRef} style={{ width: 1920, height: 1080, flexShrink: 0, transformOrigin: 'center', background: BG, padding: '40px 56px 44px', display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 32 }}>
 
-        {/* ── Header oscuro ─────────────────────────────── */}
-        <header style={{ background: DARK, borderRadius: 22, padding: '26px 44px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* ── Header amarillo ───────────────────────────── */}
+        <header style={{ background: HEADER, borderRadius: 22, padding: '26px 44px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 12px rgba(202,138,4,.25)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            <div style={{ background: '#F8DE22', borderRadius: 14, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: '#FFFFFF', borderRadius: 14, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.10)' }}>
               <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 54, width: 'auto', objectFit: 'contain' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 30, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-.01em' }}>CDA La Cordialidad</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', letterSpacing: '.16em', textTransform: 'uppercase' }}>Centro de Diagnóstico Automotor</span>
+              <span style={{ fontSize: 30, fontWeight: 800, color: '#1A1200', letterSpacing: '-.01em' }}>CDA La Cordialidad</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#78550A', letterSpacing: '.16em', textTransform: 'uppercase' }}>Centro de Diagnóstico Automotor</span>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-            <span style={{ fontSize: 48, fontWeight: 800, color: '#F8DE22', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '.01em' }}>{clock.time}</span>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#94A3B8' }}>{clock.date}</span>
+            <span style={{ fontSize: 48, fontWeight: 800, color: '#1A1200', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '.01em' }}>{clock.time}</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#78550A' }}>{clock.date}</span>
           </div>
         </header>
 
@@ -199,12 +199,12 @@ export default function PantallaTV() {
         </main>
 
         {/* ── Footer / Avisos ──────────────────────────── */}
-        <footer style={{ background: DARK, borderRadius: 18, padding: '22px 36px', display: 'flex', alignItems: 'center', gap: 26 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '9px 18px', borderRadius: 999, background: 'rgba(248,222,34,.15)', border: '1px solid rgba(248,222,34,.35)', flexShrink: 0 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F8DE22', animation: 'blink 1.6s ease-in-out infinite' }} />
-            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#F8DE22' }}>Aviso</span>
+        <footer style={{ background: FOOTER, borderRadius: 18, padding: '22px 36px', display: 'flex', alignItems: 'center', gap: 26, boxShadow: '0 2px 12px rgba(202,138,4,.25)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '9px 18px', borderRadius: 999, background: 'rgba(255,255,255,.25)', border: '1px solid rgba(255,255,255,.50)', flexShrink: 0 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1A1200', animation: 'blink 1.6s ease-in-out infinite' }} />
+            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#1A1200' }}>Aviso</span>
           </span>
-          <span ref={avisoRef} style={{ fontSize: 25, fontWeight: 500, color: '#CBD5E1' }}>{AVISOS[0]}</span>
+          <span ref={avisoRef} style={{ fontSize: 25, fontWeight: 600, color: '#1A1200' }}>{AVISOS[0]}</span>
         </footer>
 
       </div>

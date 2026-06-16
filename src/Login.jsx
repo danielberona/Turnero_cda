@@ -16,7 +16,7 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FEFCE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#FEF08A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
       <div style={{ width: 400, background: '#FFFFFF', border: '1px solid #EDE8D5', borderRadius: 20, padding: 36, boxShadow: '0 4px 24px rgba(0,0,0,.08)' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
@@ -69,7 +69,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', marginTop: 8, padding: '14px', border: 'none', borderRadius: 12, background: '#1E293B', color: '#FFFFFF', fontFamily: 'inherit', fontSize: 15, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'opacity .15s' }}
+            style={{ width: '100%', marginTop: 8, padding: '14px', border: 'none', borderRadius: 12, background: '#EAB308', color: '#1A1200', fontFamily: 'inherit', fontSize: 15, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'opacity .15s' }}
           >
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>

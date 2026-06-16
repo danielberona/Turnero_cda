@@ -2,10 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, registrarTurno, llamarSiguiente, marcarAtendido } from './supabase'
 import { CATS, codigoDisplay } from './constants'
 
-// Paleta corporativa
-const BG     = '#FEFCE8'   // fondo amarillo suave
-const DARK   = '#1E293B'   // barra oscura
-const BORDER = '#EDE8D5'   // bordes cálidos
+// Paleta — sin azul, amarillo intenso
+const BG     = '#FEF08A'   // fondo amarillo medio
+const HEADER = '#F8DE22'   // barra superior
+const BORDER = '#FDE68A'   // bordes amarillo suave
 const CARD   = '#FFFFFF'
 
 export default function PanelAdmin({ onLogout }) {
@@ -88,27 +88,27 @@ export default function PanelAdmin({ onLogout }) {
   return (
     <div style={{ minWidth: 1280, minHeight: '100vh', background: BG, fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: '#0F172A' }}>
 
-      {/* ── Barra superior oscura ──────────────────────── */}
-      <header style={{ background: DARK, padding: '0 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 70 }}>
+      {/* ── Barra superior amarilla ────────────────────── */}
+      <header style={{ background: HEADER, padding: '0 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 70, boxShadow: '0 2px 10px rgba(202,138,4,.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ background: '#F8DE22', borderRadius: 10, padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 10, padding: '4px 8px', display: 'flex', alignItems: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.10)' }}>
             <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 42, width: 'auto', objectFit: 'contain' }} />
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-.01em', whiteSpace: 'nowrap' }}>CDA La Cordialidad</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', letterSpacing: '.12em', textTransform: 'uppercase' }}>Panel del operario</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1200', letterSpacing: '-.01em', whiteSpace: 'nowrap' }}>CDA La Cordialidad</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#78550A', letterSpacing: '.12em', textTransform: 'uppercase' }}>Panel del operario</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 20, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: '#F8DE22', lineHeight: 1.1 }}>{clock.time}</div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8' }}>{clock.date}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: '#1A1200', lineHeight: 1.1 }}>{clock.time}</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: '#78550A' }}>{clock.date}</div>
           </div>
           <button
             onClick={onLogout}
-            style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #334155', background: 'transparent', fontSize: 13, fontWeight: 600, color: '#94A3B8', cursor: 'pointer', fontFamily: 'inherit', transition: 'color .15s, border-color .15s' }}
-            onMouseOver={e => { e.currentTarget.style.color = '#F8DE22'; e.currentTarget.style.borderColor = '#F8DE22' }}
-            onMouseOut={e  => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.borderColor = '#334155' }}
+            style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(0,0,0,.18)', background: 'rgba(255,255,255,.35)', fontSize: 13, fontWeight: 700, color: '#1A1200', cursor: 'pointer', fontFamily: 'inherit', transition: 'background .15s' }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,.6)' }}
+            onMouseOut={e  => { e.currentTarget.style.background = 'rgba(255,255,255,.35)' }}
           >
             Cerrar sesión
           </button>
@@ -167,9 +167,9 @@ export default function PanelAdmin({ onLogout }) {
 
             <button
               onClick={handleAssign} disabled={!canAssign}
-              style={{ width: '100%', marginTop: 22, padding: 15, border: 'none', borderRadius: 12, background: canAssign ? '#CA8A04' : '#E8E3D5', color: canAssign ? '#FFFFFF' : '#A8A29E', fontFamily: 'inherit', fontSize: 15, fontWeight: 800, letterSpacing: '.01em', cursor: canAssign ? 'pointer' : 'not-allowed', transition: 'background .15s' }}
+              style={{ width: '100%', marginTop: 22, padding: 15, border: 'none', borderRadius: 12, background: canAssign ? '#EAB308' : '#E8E3D5', color: canAssign ? '#1A1200' : '#A8A29E', fontFamily: 'inherit', fontSize: 15, fontWeight: 800, letterSpacing: '.01em', cursor: canAssign ? 'pointer' : 'not-allowed', transition: 'background .15s' }}
               onMouseOver={e => { if (canAssign) e.currentTarget.style.background = '#A16207' }}
-              onMouseOut={e  => { if (canAssign) e.currentTarget.style.background = '#CA8A04' }}
+              onMouseOut={e  => { if (canAssign) e.currentTarget.style.background = '#EAB308' }}
             >
               {loading ? 'Asignando…' : 'Asignar turno'}
             </button>
@@ -287,5 +287,5 @@ function FieldLabel({ children, mt }) {
 function inputStyle({ mono }) {
   return { width: '100%', padding: '12px 14px', border: `1.5px solid ${BORDER}`, borderRadius: 11, fontSize: mono ? 17 : 14, fontWeight: mono ? 700 : 500, fontFamily: mono ? 'ui-monospace, monospace' : 'inherit', letterSpacing: mono ? '.12em' : undefined, textTransform: mono ? 'uppercase' : undefined, color: '#1E293B', background: '#FAFAF7' }
 }
-function focus(e) { e.target.style.borderColor = '#CA8A04'; e.target.style.background = '#FFFFFF' }
+function focus(e) { e.target.style.borderColor = '#EAB308'; e.target.style.background = '#FFFFFF' }
 function blur(e)  { e.target.style.borderColor = BORDER;   e.target.style.background = '#FAFAF7' }
