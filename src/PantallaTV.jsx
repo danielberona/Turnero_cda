@@ -2,6 +2,19 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
 import { CATS, AVISOS, codigoDisplay } from './constants'
 
+// ── Paleta sin azul, base blanca, amarillo como acento de marca ──────────────
+const P = {
+  bg:       '#FEFCE8',           // amarillo-50 muy suave — casi blanco
+  header:   '#F8DE22',           // amarillo de marca (del logo)
+  footer:   '#EAB308',           // ámbar oscuro para la barra de avisos
+  card:     '#FFFFFF',
+  border:   '#FDE68A',           // amarillo-200 para bordes cálidos
+  shadow:   'rgba(161,98,7,.09)',// sombra teñida en ámbar, no gris
+  txt:      '#1C1000',           // casi-negro cálido — sin azul
+  txt2:     '#78550A',           // ámbar oscuro para texto secundario
+  txt3:     '#A37A00',           // dorado suave para texto terciario
+}
+
 export default function PantallaTV() {
   const [history,     setHistory]     = useState([])
   const [waitingList, setWaitingList] = useState([])
@@ -88,65 +101,67 @@ export default function PantallaTV() {
     const canal  = supabase.channel('tv-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos' }, loadData)
       .subscribe()
-    return () => { window.removeEventListener('resize', fitStage); clearInterval(clockT); clearInterval(avisoT); canal.unsubscribe() }
+    return () => {
+      window.removeEventListener('resize', fitStage)
+      clearInterval(clockT); clearInterval(avisoT); canal.unsubscribe()
+    }
   }, [])
 
   const cur    = history[0]
   const curCat = cur ? CATS[cur.codigo] : null
 
-  // Paleta — sin azul, amarillo intenso
-  const BG      = '#FEF08A'   // fondo amarillo medio
-  const HEADER  = '#F8DE22'   // barra superior amarillo fuerte
-  const FOOTER  = '#EAB308'   // barra inferior amarillo oscuro
-  const CARD    = '#FFFFFF'
-  const BORDER  = '#FDE68A'   // borde amarillo suave
+  const card = (extra = {}) => ({
+    background: P.card,
+    border: `1px solid ${P.border}`,
+    boxShadow: `0 2px 8px ${P.shadow}, 0 8px 24px ${P.shadow}`,
+    ...extra,
+  })
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-      <div ref={stageRef} style={{ width: 1920, height: 1080, flexShrink: 0, transformOrigin: 'center', background: BG, padding: '40px 56px 44px', display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 32 }}>
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <div ref={stageRef} style={{ width: 1920, height: 1080, flexShrink: 0, transformOrigin: 'center', background: P.bg, padding: '40px 52px 44px', display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 30 }}>
 
-        {/* ── Header amarillo ───────────────────────────── */}
-        <header style={{ background: HEADER, borderRadius: 22, padding: '26px 44px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 12px rgba(202,138,4,.25)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            <div style={{ background: '#FFFFFF', borderRadius: 14, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.10)' }}>
-              <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 54, width: 'auto', objectFit: 'contain' }} />
+        {/* ── Header de marca ──────────────────────────── */}
+        <header style={{ background: P.header, borderRadius: 20, padding: '22px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: `0 4px 20px rgba(202,138,4,.20)` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+            <div style={{ background: P.card, borderRadius: 12, padding: '5px 9px', boxShadow: '0 1px 6px rgba(0,0,0,.12)' }}>
+              <img src="/logocda.png" alt="CDA La Cordialidad" style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 30, fontWeight: 800, color: '#1A1200', letterSpacing: '-.01em' }}>CDA La Cordialidad</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#78550A', letterSpacing: '.16em', textTransform: 'uppercase' }}>Centro de Diagnóstico Automotor</span>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: P.txt, letterSpacing: '-.02em', lineHeight: 1.1 }}>CDA La Cordialidad</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: P.txt2, letterSpacing: '.18em', textTransform: 'uppercase', marginTop: 3 }}>Centro de Diagnóstico Automotor</div>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-            <span style={{ fontSize: 48, fontWeight: 800, color: '#1A1200', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '.01em' }}>{clock.time}</span>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#78550A' }}>{clock.date}</span>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 46, fontWeight: 800, color: P.txt, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{clock.time}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: P.txt2, marginTop: 4 }}>{clock.date}</div>
           </div>
         </header>
 
         {/* ── Main ─────────────────────────────────────── */}
-        <main style={{ display: 'grid', gridTemplateColumns: '1.42fr 1fr', gap: 32, minHeight: 0 }}>
+        <main style={{ display: 'grid', gridTemplateColumns: '1.42fr 1fr', gap: 28, minHeight: 0 }}>
 
-          {/* Hero — turno en llamado */}
-          <section ref={heroRef} style={{ position: 'relative', overflow: 'hidden', background: CARD, border: `1px solid ${BORDER}`, boxShadow: '0 2px 16px rgba(0,0,0,.06)', borderRadius: 28, padding: '56px 60px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {/* Hero */}
+          <section ref={heroRef} style={{ ...card({ borderRadius: 26, borderLeft: `8px solid ${cur ? curCat.color : P.border}`, padding: '54px 58px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }) }}>
             {cur ? (
               <>
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 10, background: curCat.color }} />
-                <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '.22em', color: '#94A3B8', textTransform: 'uppercase' }}>Turno en llamado</div>
-                <div style={{ marginTop: 6, fontSize: 200, lineHeight: .86, fontWeight: 800, color: curCat.color, letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '.22em', color: P.txt3, textTransform: 'uppercase' }}>Turno en llamado</div>
+                <div style={{ marginTop: 4, fontSize: 200, lineHeight: .86, fontWeight: 800, color: curCat.color, letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
                   {codigoDisplay(cur)}
                 </div>
-                <div style={{ marginTop: 30, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 12, padding: '12px 22px', borderRadius: 999, background: curCat.color + '18', border: `1px solid ${curCat.color}40` }}>
-                  <span style={{ width: 13, height: 13, borderRadius: 4, background: curCat.color }} />
-                  <span style={{ fontSize: 24, fontWeight: 700, color: curCat.color }}>{cur.categoria}</span>
+                <div style={{ marginTop: 28, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 11, padding: '11px 20px', borderRadius: 999, background: curCat.color + '18', border: `1.5px solid ${curCat.color}50` }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 4, background: curCat.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 23, fontWeight: 700, color: curCat.color }}>{cur.categoria}</span>
                 </div>
-                <div style={{ marginTop: 40, height: 1, background: BORDER }} />
-                <div style={{ marginTop: 32, display: 'flex', gap: 64, flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase', color: '#94A3B8' }}>Cliente</span>
-                    <span style={{ fontSize: 40, fontWeight: 700, color: '#1E293B', lineHeight: 1 }}>{cur.nombre_cliente}</span>
+                <div style={{ marginTop: 40, height: 1, background: P.border }} />
+                <div style={{ marginTop: 30, display: 'flex', gap: 60, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase', color: P.txt3 }}>Cliente</span>
+                    <span style={{ fontSize: 38, fontWeight: 700, color: P.txt, lineHeight: 1.05 }}>{cur.nombre_cliente}</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase', color: '#94A3B8' }}>Placa</span>
-                    <span style={{ alignSelf: 'flex-start', padding: '8px 20px', borderRadius: 12, background: '#F8F6F0', border: `1px solid ${BORDER}`, fontFamily: 'ui-monospace, monospace', fontSize: 34, fontWeight: 700, letterSpacing: '.1em', color: '#1E293B' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase', color: P.txt3 }}>Placa</span>
+                    <span style={{ alignSelf: 'flex-start', padding: '8px 18px', borderRadius: 11, background: P.bg, border: `1.5px solid ${P.border}`, fontFamily: 'ui-monospace, monospace', fontSize: 32, fontWeight: 700, letterSpacing: '.1em', color: P.txt }}>
                       {cur.placa_vehiculo}
                     </span>
                   </div>
@@ -154,42 +169,40 @@ export default function PantallaTV() {
               </>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, opacity: 0.3 }}>
-                <div style={{ fontSize: 110, fontWeight: 800, color: '#94A3B8', lineHeight: 1 }}>—</div>
-                <div style={{ fontSize: 30, fontWeight: 600, color: '#94A3B8' }}>Sin turno activo</div>
+                <div style={{ fontSize: 110, fontWeight: 800, color: P.txt3, lineHeight: 1 }}>—</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: P.txt3 }}>Sin turno activo</div>
               </div>
             )}
           </section>
 
           {/* Cola en espera */}
-          <aside style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: '0 2px 16px rgba(0,0,0,.06)', borderRadius: 28, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '26px 32px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexShrink: 0 }}>
-              <span style={{ fontSize: 24, fontWeight: 800, color: '#1E293B' }}>En espera</span>
-              <span style={{ fontSize: 17, fontWeight: 700, color: '#94A3B8' }}>{waitingList.length} turnos</span>
+          <aside style={{ ...card({ borderRadius: 26 }), display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '24px 30px 16px', borderBottom: `1px solid ${P.border}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontSize: 22, fontWeight: 800, color: P.txt }}>En espera</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: P.txt3 }}>{waitingList.length} turnos</span>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '6px 18px 18px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '6px 16px 16px' }}>
               {waitingList.length === 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 22, color: '#94A3B8', fontWeight: 600 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 20, color: P.txt3, fontWeight: 600 }}>
                   Sin turnos en espera
                 </div>
               ) : waitingList.map(t => {
                 const cat = CATS[t.codigo]
                 return (
-                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '16px 14px', borderRadius: 16, borderBottom: `1px solid ${BORDER}` }}>
-                    <div style={{ width: 7, height: 50, borderRadius: 99, background: cat.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 36, fontWeight: 800, color: cat.color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.01em', minWidth: 106, flexShrink: 0 }}>
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 12px', borderRadius: 14, borderBottom: `1px solid ${P.border}` }}>
+                    <div style={{ width: 6, height: 48, borderRadius: 99, background: cat.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 34, fontWeight: 800, color: cat.color, fontVariantNumeric: 'tabular-nums', minWidth: 100, flexShrink: 0 }}>
                       {codigoDisplay(t)}
                     </span>
-                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                      <span style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {t.nombre_cliente}
-                      </span>
-                      <span style={{ fontSize: 18, fontFamily: 'ui-monospace, monospace', fontWeight: 700, letterSpacing: '.1em', color: '#475569', background: '#F8F6F0', border: `1px solid ${BORDER}`, borderRadius: 7, padding: '2px 10px', alignSelf: 'flex-start' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 21, fontWeight: 700, color: P.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
+                      <div style={{ fontSize: 16, fontFamily: 'ui-monospace, monospace', fontWeight: 700, letterSpacing: '.09em', color: P.txt2, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 7, padding: '2px 9px', marginTop: 4, display: 'inline-block' }}>
                         {t.placa_vehiculo}
-                      </span>
+                      </div>
                     </div>
-                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 999, background: cat.color + '18', border: `1px solid ${cat.color}40` }}>
-                      <span style={{ width: 9, height: 9, borderRadius: 3, background: cat.color, flexShrink: 0 }} />
-                      <span style={{ fontSize: 15, fontWeight: 700, color: cat.color, whiteSpace: 'nowrap' }}>{cat.short}</span>
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, background: cat.color + '18', border: `1.5px solid ${cat.color}40` }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 3, background: cat.color }} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: cat.color }}>{cat.short}</span>
                     </div>
                   </div>
                 )
@@ -198,13 +211,13 @@ export default function PantallaTV() {
           </aside>
         </main>
 
-        {/* ── Footer / Avisos ──────────────────────────── */}
-        <footer style={{ background: FOOTER, borderRadius: 18, padding: '22px 36px', display: 'flex', alignItems: 'center', gap: 26, boxShadow: '0 2px 12px rgba(202,138,4,.25)' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '9px 18px', borderRadius: 999, background: 'rgba(255,255,255,.25)', border: '1px solid rgba(255,255,255,.50)', flexShrink: 0 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1A1200', animation: 'blink 1.6s ease-in-out infinite' }} />
-            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#1A1200' }}>Aviso</span>
+        {/* ── Barra de avisos ───────────────────────────── */}
+        <footer style={{ background: P.footer, borderRadius: 16, padding: '20px 34px', display: 'flex', alignItems: 'center', gap: 24, boxShadow: `0 4px 16px rgba(161,98,7,.22)` }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '8px 16px', borderRadius: 999, background: 'rgba(255,255,255,.22)', border: '1.5px solid rgba(255,255,255,.45)', flexShrink: 0 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: P.txt, animation: 'blink 1.6s ease-in-out infinite' }} />
+            <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: P.txt }}>Aviso</span>
           </span>
-          <span ref={avisoRef} style={{ fontSize: 25, fontWeight: 600, color: '#1A1200' }}>{AVISOS[0]}</span>
+          <span ref={avisoRef} style={{ fontSize: 24, fontWeight: 600, color: P.txt }}>{AVISOS[0]}</span>
         </footer>
 
       </div>
