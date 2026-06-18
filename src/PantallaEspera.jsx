@@ -5,7 +5,7 @@ import { supabase } from './supabase'
 const D = {
   bg:     '#FFFFFF',   // fondo blanco total — sin panel flotante
   surf:   '#FFFFFF',
-  surf2:  '#F8FAFC',
+  surf2:  '#FFFFFF',
   border: '#E2E8F0',
   border2:'#CBD5E1',
   txt:    '#0F172A',
@@ -156,7 +156,7 @@ export default function PantallaEspera() {
         </header>
 
         {/* ── Main ────────────────────────────────────────────────── */}
-        <main style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 32, padding: '32px 56px', minHeight: 0, background: '#EEF2F7' }}>
+        <main style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 32, padding: '32px 56px', minHeight: 0, background: D.bg }}>
 
           {/* Hero — turno actual */}
           <section

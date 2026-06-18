@@ -4,7 +4,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { margin: 0; padding: 0; height: 100%; }
-body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #ffffff; }
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
