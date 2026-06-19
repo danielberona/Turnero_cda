@@ -35,7 +35,7 @@ export default function PanelAdmin({ onLogout }) {
   const [current,      setCurrent]      = useState({ A: null, R: null, B: null, V: null })
   const [plate,        setPlate]        = useState('')
   const [name,         setName]         = useState('')
-  const [cedula,       setCedula]       = useState('')
+  const [numero,       setNumero]       = useState('')
   const [selCat,       setSelCat]       = useState('')
   const [lastAssigned, setLastAssigned] = useState(null)
   const [loading,      setLoading]      = useState(false)
@@ -77,9 +77,9 @@ export default function PanelAdmin({ onLogout }) {
     setLoading(true)
     try {
       const cat   = CATS[selCat]
-      const turno = await registrarTurno({ placa: plate.trim().toUpperCase(), nombre: name.trim(), cedula: cedula.trim(), codigo: selCat, categoria: cat.label, color: cat.color })
+      const turno = await registrarTurno({ placa: plate.trim().toUpperCase(), nombre: name.trim(), codigo: selCat, categoria: cat.label, color: cat.color, numero: numero.trim() })
       setLastAssigned(turno)
-      setPlate(''); setName(''); setCedula(''); setSelCat('')
+      setPlate(''); setName(''); setNumero(''); setSelCat('')
       await loadData()
       setTimeout(() => setLastAssigned(null), 4000)
     } catch (e) { alert('Error al asignar turno: ' + e.message) }
@@ -96,7 +96,7 @@ export default function PanelAdmin({ onLogout }) {
     catch (e) { alert('Error: ' + e.message) }
   }
 
-  const canAssign = !!(plate.trim() && name.trim() && selCat && !loading)
+  const canAssign = !!(plate.trim() && name.trim() && numero.trim() && selCat && !loading)
 
   return (
     <div style={{ minHeight: '100vh', background: D.bg, color: D.txt, fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
@@ -160,16 +160,12 @@ export default function PanelAdmin({ onLogout }) {
                 onBlur={e  => { e.target.style.borderColor = D.border; e.target.style.boxShadow = 'none' }} />
             </Field>
 
-            <div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 7 }}>
-                <Label>Cédula</Label>
-                <span style={{ fontSize: 11, color: D.txt3 }}>opcional</span>
-              </div>
-              <input value={cedula} onChange={e => setCedula(e.target.value)} placeholder="N.º de documento"
-                style={iStyle({})}
+            <Field label="Número de turno">
+              <input value={numero} onChange={e => setNumero(e.target.value.replace(/\D/g, ''))} placeholder="001" maxLength={4}
+                style={iStyle({ mono: true })}
                 onFocus={e => { e.target.style.borderColor = '#F59E0B'; e.target.style.boxShadow = '0 0 0 3px rgba(245,158,11,.10)' }}
                 onBlur={e  => { e.target.style.borderColor = D.border; e.target.style.boxShadow = 'none' }} />
-            </div>
+            </Field>
 
             <div>
               <Label>Categoría de revisión</Label>

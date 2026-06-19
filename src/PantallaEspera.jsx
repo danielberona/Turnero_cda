@@ -52,6 +52,7 @@ export default function PantallaEspera() {
 
   const stageRef    = useRef(null)
   const prevIdRef   = useRef(null)
+  const speechIdRef = useRef('INIT')
 
   // ── Escala 1920×1080 → ventana ───────────────────────────────────────────
   const fitStage = () => {
@@ -118,6 +119,23 @@ export default function PantallaEspera() {
     }
   }, [])
 
+  // ── Anuncio de voz al llamar turno ───────────────────────────────────────
+  useEffect(() => {
+    if (!current) return
+    const isFirstLoad = speechIdRef.current === 'INIT'
+    if (current.id === speechIdRef.current) return
+    speechIdRef.current = current.id
+    if (isFirstLoad) return
+    if (!window.speechSynthesis) return
+    const utterance = new SpeechSynthesisUtterance(
+      `Turno ${current.codigo} ${pad(current.numero)}, por favor acérquese a ventanilla.`
+    )
+    utterance.lang = 'es-CO'
+    utterance.rate = 0.92
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utterance)
+  }, [current])
+
   const cat = current ? CATS[current.codigo] : null
 
   return (
@@ -170,7 +188,7 @@ export default function PantallaEspera() {
                 <>
                   <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '.28em', textTransform: 'uppercase', color: D.txt3 }}>Turno en llamado</div>
 
-                  <div style={{ marginTop: 6, fontSize: 210, lineHeight: .86, fontWeight: 900, color: cat.color, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ marginTop: 6, fontSize: 260, lineHeight: .86, fontWeight: 900, color: cat.color, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
                     {code(current)}
                   </div>
 
@@ -184,11 +202,11 @@ export default function PantallaEspera() {
                   <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr auto', gap: 36, alignItems: 'end' }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Cliente</div>
-                      <div style={{ fontSize: 44, fontWeight: 800, color: D.txt, lineHeight: 1.05, letterSpacing: '-.01em' }}>{current.nombre_cliente}</div>
+                      <div style={{ fontSize: 64, fontWeight: 800, color: D.txt, lineHeight: 1.05, letterSpacing: '-.01em' }}>{current.nombre_cliente}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Placa</div>
-                      <div style={{ padding: '10px 22px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 36, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
+                      <div style={{ padding: '10px 22px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 44, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
                         {current.placa_vehiculo}
                       </div>
                     </div>
@@ -221,7 +239,7 @@ export default function PantallaEspera() {
                   <div key={t.id}
                     style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '15px 14px', borderRadius: 14, borderBottom: i < waiting.length - 1 ? `1px solid ${D.border}` : 'none' }}>
                     <div style={{ width: 5, height: 52, borderRadius: 99, background: tc.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 32, fontWeight: 900, color: tc.color, fontVariantNumeric: 'tabular-nums', minWidth: 110, flexShrink: 0 }}>{code(t)}</span>
+                    <span style={{ fontSize: 44, fontWeight: 900, color: tc.color, fontVariantNumeric: 'tabular-nums', minWidth: 140, flexShrink: 0 }}>{code(t)}</span>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: 20, fontWeight: 700, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
                       <div style={{ fontSize: 14, fontFamily: 'ui-monospace, monospace', fontWeight: 700, letterSpacing: '.07em', color: D.txt3, background: D.surf2, border: `1px solid ${D.border}`, borderRadius: 8, padding: '2px 10px', marginTop: 5, display: 'inline-block' }}>

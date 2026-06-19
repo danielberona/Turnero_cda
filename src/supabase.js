@@ -5,14 +5,10 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON)
 
-export async function registrarTurno({ placa, nombre, cedula, codigo, categoria, color }) {
-  const { data: numero, error: errN } = await supabase
-    .rpc('generar_numero_turno', { p_codigo: codigo })
-  if (errN) throw new Error(errN.message)
-
+export async function registrarTurno({ placa, nombre, codigo, categoria, color, numero }) {
   const { data, error } = await supabase
     .from('turnos')
-    .insert({ codigo, numero, categoria, color, placa_vehiculo: placa, nombre_cliente: nombre, cedula_cliente: cedula || '' })
+    .insert({ codigo, numero: Number(numero), categoria, color, placa_vehiculo: placa, nombre_cliente: nombre })
     .select()
     .single()
   if (error) throw new Error(error.message)
