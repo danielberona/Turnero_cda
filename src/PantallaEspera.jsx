@@ -117,15 +117,31 @@ export default function PantallaEspera() {
     if (current.id === speechIdRef.current) return
     speechIdRef.current = current.id
     if (isFirstLoad) return
-    if (!window.speechSynthesis) return
+
+    const synth = window.speechSynthesis
+    if (!synth) return
+
     const turnoHablado = String(current.numero).padStart(3, '0').split('').join(' ')
-    const utterance = new SpeechSynthesisUtterance(
-      `Turno ${turnoHablado}, por favor acérquese a entrega de resultado.`
-    )
-    utterance.lang = 'es-CO'
-    utterance.rate = 0.92
-    window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(utterance)
+    const texto = `Turno ${turnoHablado}, por favor acérquese a entrega de resultado.`
+
+    const hablar = () => {
+      const utterance = new SpeechSynthesisUtterance(texto)
+      // Prefiere voz en español; si no hay, usa la que esté disponible
+      const voces = synth.getVoices()
+      const voz = voces.find(v => v.lang.startsWith('es')) ?? voces[0] ?? null
+      if (voz) utterance.voice = voz
+      utterance.lang = 'es-CO'
+      utterance.rate = 0.92
+      synth.cancel()
+      synth.speak(utterance)
+    }
+
+    // Las voces pueden no estar listas aún (Chrome las carga async)
+    if (synth.getVoices().length > 0) {
+      hablar()
+    } else {
+      synth.addEventListener('voiceschanged', hablar, { once: true })
+    }
   }, [current])
 
   const cat = current ? CATS[current.codigo] : null
