@@ -179,10 +179,7 @@ export default function PanelAdmin({ onLogout }) {
                       <span style={{ width: 30, height: 30, borderRadius: 8, background: sel ? c.color : c.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .18s' }}>
                         <Icon size={15} color={sel ? '#fff' : c.color} />
                       </span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.1 }}>{c.short}</div>
-                        <div style={{ fontSize: 10, color: D.txt3, marginTop: 1 }}>Cod. {k}</div>
-                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.1 }}>{c.short}</div>
                     </button>
                   )
                 })}
@@ -225,7 +222,7 @@ export default function PanelAdmin({ onLogout }) {
               {Object.entries(CATS).map(([k, c]) => (
                 <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999, background: D.surf, border: `1px solid ${D.border}` }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.color }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: D.txt2 }}>{k}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: D.txt2 }}>{c.short}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: D.txt, fontVariantNumeric: 'tabular-nums' }}>{queues[k].length}</span>
                 </div>
               ))}

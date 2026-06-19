@@ -178,27 +178,23 @@ export default function PantallaEspera() {
             <div style={{ position: 'relative' }}>
               {current ? (
                 <>
-                  <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '.28em', textTransform: 'uppercase', color: D.txt3 }}>Turno en llamado</div>
-
-                  <div style={{ marginTop: 4, fontSize: code(current).length >= 5 ? 180 : code(current).length >= 4 ? 220 : 280, lineHeight: .86, fontWeight: 900, color: cat.color, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ fontSize: code(current).length >= 5 ? 210 : code(current).length >= 4 ? 270 : 340, lineHeight: .80, fontWeight: 900, color: cat.color, letterSpacing: '-.04em', fontVariantNumeric: 'tabular-nums' }}>
                     {code(current)}
                   </div>
 
-                  <div style={{ marginTop: 22, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 11, padding: '10px 20px', borderRadius: 999, background: cat.color + '10', border: `1.5px solid ${cat.color}30` }}>
+                  <div style={{ marginTop: 14, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 11, padding: '10px 20px', borderRadius: 999, background: cat.color + '10', border: `1.5px solid ${cat.color}30` }}>
                     <span style={{ width: 9, height: 9, borderRadius: 3, background: cat.color, flexShrink: 0 }} />
                     <span style={{ fontSize: 20, fontWeight: 800, color: cat.color }}>{cat.name}</span>
                   </div>
 
-                  <div style={{ marginTop: 38, height: 1, background: D.border }} />
-
-                  <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <div style={{ marginTop: 44, display: 'flex', flexDirection: 'column', gap: 32 }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Cliente</div>
-                      <div style={{ fontSize: 64, fontWeight: 800, color: D.txt, lineHeight: 1.05, letterSpacing: '-.01em' }}>{current.nombre_cliente}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: D.txt3, marginBottom: 12 }}>Cliente</div>
+                      <div style={{ fontSize: 80, fontWeight: 800, color: D.txt, lineHeight: 1, letterSpacing: '-.02em' }}>{current.nombre_cliente}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Placa</div>
-                      <div style={{ display: 'inline-block', padding: '10px 22px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 44, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: D.txt3, marginBottom: 12 }}>Placa</div>
+                      <div style={{ display: 'inline-block', padding: '12px 28px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 52, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
                         {current.placa_vehiculo}
                       </div>
                     </div>
@@ -230,10 +226,10 @@ export default function PantallaEspera() {
                 return (
                   <div key={t.id}
                     style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '15px 14px', borderRadius: 14, borderBottom: i < waiting.length - 1 ? `1px solid ${D.border}` : 'none' }}>
-                    <div style={{ width: 5, height: 52, borderRadius: 99, background: tc.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 44, fontWeight: 900, color: tc.color, fontVariantNumeric: 'tabular-nums', minWidth: 140, flexShrink: 0 }}>{code(t)}</span>
+                    <div style={{ width: 5, height: 64, borderRadius: 99, background: tc.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 56, fontWeight: 900, color: tc.color, fontVariantNumeric: 'tabular-nums', minWidth: 170, flexShrink: 0 }}>{code(t)}</span>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
+                      <div style={{ fontSize: 26, fontWeight: 700, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
                       <div style={{ fontSize: 14, fontFamily: 'ui-monospace, monospace', fontWeight: 700, letterSpacing: '.07em', color: D.txt3, background: D.surf2, border: `1px solid ${D.border}`, borderRadius: 8, padding: '2px 10px', marginTop: 5, display: 'inline-block' }}>
                         {t.placa_vehiculo}
                       </div>
