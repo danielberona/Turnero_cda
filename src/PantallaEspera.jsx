@@ -46,8 +46,6 @@ export default function PantallaEspera() {
   const [waiting, setWaiting]  = useState([])
   const [heroKey,  setHeroKey] = useState(0)
   const [flashKey, setFlashKey]= useState(0)
-  const [avisoIdx, setAvisoIdx]= useState(0)
-  const [avisoKey, setAvisoKey]= useState(0)
   const [clock,    setClock]   = useState({ time: '', date: '' })
 
   const stageRef    = useRef(null)
@@ -100,12 +98,6 @@ export default function PantallaEspera() {
     const d0   = now0.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
     setClock({ time: fmt12h(now0), date: d0.charAt(0).toUpperCase() + d0.slice(1) })
 
-    // Avisos
-    const avisoT = setInterval(() => {
-      setAvisoIdx(i => (i + 1) % AVISOS.length)
-      setAvisoKey(k => k + 1)
-    }, 7000)
-
     // Realtime
     const canal = supabase.channel('tv-espera')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos' }, loadData)
@@ -114,7 +106,6 @@ export default function PantallaEspera() {
     return () => {
       window.removeEventListener('resize', fitStage)
       clearInterval(clockT)
-      clearInterval(avisoT)
       canal.unsubscribe()
     }
   }, [])
@@ -180,7 +171,7 @@ export default function PantallaEspera() {
           {/* Hero — turno actual */}
           <section
             key={`hero-${heroKey}`}
-            style={{ background: cat ? cat.color + '0A' : D.surf, borderRadius: 22, padding: '52px 60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', animation: 'heroIn .60s cubic-bezier(.2,.75,.2,1) both', boxShadow: '0 4px 24px rgba(15,23,42,.08)', position: 'relative' }}
+            style={{ background: cat ? cat.color + '0A' : D.surf, borderRadius: 22, padding: '36px 60px 52px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflow: 'hidden', animation: 'heroIn .60s cubic-bezier(.2,.75,.2,1) both', boxShadow: '0 4px 24px rgba(15,23,42,.08)', position: 'relative' }}
           >
             {cat && <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 80% 70% at 20% 50%, ${cat.color}10 0%, transparent 70%)`, pointerEvents: 'none', borderRadius: 'inherit' }} />}
 
@@ -189,7 +180,7 @@ export default function PantallaEspera() {
                 <>
                   <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '.28em', textTransform: 'uppercase', color: D.txt3 }}>Turno en llamado</div>
 
-                  <div style={{ marginTop: 6, fontSize: 260, lineHeight: .86, fontWeight: 900, color: cat.color, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ marginTop: 4, fontSize: code(current).length >= 5 ? 180 : code(current).length >= 4 ? 220 : 280, lineHeight: .86, fontWeight: 900, color: cat.color, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
                     {code(current)}
                   </div>
 
@@ -200,14 +191,14 @@ export default function PantallaEspera() {
 
                   <div style={{ marginTop: 38, height: 1, background: D.border }} />
 
-                  <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr auto', gap: 36, alignItems: 'end' }}>
+                  <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 18 }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Cliente</div>
                       <div style={{ fontSize: 64, fontWeight: 800, color: D.txt, lineHeight: 1.05, letterSpacing: '-.01em' }}>{current.nombre_cliente}</div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div>
                       <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: D.txt3, marginBottom: 8 }}>Placa</div>
-                      <div style={{ padding: '10px 22px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 44, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
+                      <div style={{ display: 'inline-block', padding: '10px 22px', borderRadius: 13, background: D.surf2, border: `1.5px solid ${D.border2}`, fontFamily: 'ui-monospace, monospace', fontSize: 44, fontWeight: 800, letterSpacing: '.14em', color: D.txt }}>
                         {current.placa_vehiculo}
                       </div>
                     </div>
@@ -266,10 +257,9 @@ export default function PantallaEspera() {
           </div>
           <div style={{ flex: 1, overflow: 'hidden', height: '100%', display: 'flex', alignItems: 'center' }}>
             <span
-              key={`aviso-${avisoKey}`}
-              style={{ display: 'inline-block', whiteSpace: 'nowrap', fontSize: 21, fontWeight: 500, color: D.txt2, animation: 'marqueeScroll 26s linear forwards' }}
+              style={{ display: 'inline-block', whiteSpace: 'nowrap', fontSize: 21, fontWeight: 500, color: D.txt2, animation: 'marqueeScroll 55s linear infinite' }}
             >
-              {AVISOS[avisoIdx]}
+              {AVISOS.join('   ·   ')}
             </span>
           </div>
         </footer>

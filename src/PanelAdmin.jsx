@@ -161,7 +161,7 @@ export default function PanelAdmin({ onLogout }) {
             </Field>
 
             <Field label="Número de turno">
-              <input value={numero} onChange={e => setNumero(e.target.value.replace(/\D/g, ''))} placeholder="001" maxLength={4}
+              <input value={numero} onChange={e => setNumero(e.target.value.replace(/\D/g, ''))} placeholder="001"
                 style={iStyle({ mono: true })}
                 onFocus={e => { e.target.style.borderColor = '#F59E0B'; e.target.style.boxShadow = '0 0 0 3px rgba(245,158,11,.10)' }}
                 onBlur={e  => { e.target.style.borderColor = D.border; e.target.style.boxShadow = 'none' }} />
