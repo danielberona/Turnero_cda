@@ -28,7 +28,7 @@ const CATS = {
 }
 
 const pad  = (n) => String(n).padStart(2, '0')
-const code = (t) => `${t.codigo}-${pad(t.numero)}`
+const code = (t) => String(t.numero).padStart(3, '0')
 
 export default function PanelAdmin({ onLogout }) {
   const [queues,       setQueues]       = useState({ A: [], R: [], B: [], V: [] })

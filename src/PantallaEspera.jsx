@@ -30,7 +30,7 @@ const AVISOS = [
 ]
 
 const pad  = (n) => String(n).padStart(2, '0')
-const code = (t) => String(t.numero)
+const code = (t) => String(t.numero).padStart(3, '0')
 
 // Reloj en formato 12 h → "3:45 PM"
 const fmt12h = (d) => {
@@ -127,8 +127,9 @@ export default function PantallaEspera() {
     speechIdRef.current = current.id
     if (isFirstLoad) return
     if (!window.speechSynthesis) return
+    const turnoHablado = String(current.numero).padStart(3, '0').split('').join(' ')
     const utterance = new SpeechSynthesisUtterance(
-      `Turno ${current.numero}, por favor acérquese a ventanilla.`
+      `Turno ${turnoHablado}, por favor acérquese a ventanilla.`
     )
     utterance.lang = 'es-CO'
     utterance.rate = 0.92
