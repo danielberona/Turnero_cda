@@ -21,9 +21,9 @@ const D = {
 }
 
 const CATS = {
-  A: { color: '#F59E0B', name: 'Motos y Autos',   short: 'Autos',     Icon: Car,           label: 'Motos y Autos' },
-  R: { color: '#EF4444', name: 'Segunda Revisión', short: 'Revisión',  Icon: RefreshCcw,    label: 'Segunda Revisión' },
-  B: { color: '#3B82F6', name: 'Carga Pesada',     short: 'Carga',     Icon: Truck,         label: 'Carga Pesada' },
+  A: { color: '#F59E0B', name: 'Motos y Autos',    short: 'Autos y Motos',  Icon: Car,           label: 'Motos y Autos' },
+  R: { color: '#EF4444', name: 'Segunda Revisión', short: 'Re-Inspección',  Icon: RefreshCcw,    label: 'Segunda Revisión' },
+  B: { color: '#3B82F6', name: 'Carga Pesada',     short: 'Pesados',        Icon: Truck,         label: 'Carga Pesada' },
   V: { color: '#22C55E', name: 'Enseñanza',         short: 'Enseñanza', Icon: GraduationCap, label: 'Enseñanza' },
 }
 

@@ -120,7 +120,7 @@ export default function PantallaEspera() {
     if (!window.speechSynthesis) return
     const turnoHablado = String(current.numero).padStart(3, '0').split('').join(' ')
     const utterance = new SpeechSynthesisUtterance(
-      `Turno ${turnoHablado}, por favor acérquese a ventanilla.`
+      `Turno ${turnoHablado}, por favor acérquese a entrega de resultado.`
     )
     utterance.lang = 'es-CO'
     utterance.rate = 0.92
