@@ -24,7 +24,7 @@ const CATS = {
 const AVISOS = [
   'Bienvenido al CDA La Cordialidad — tenga a mano su documentación.',
   'Recuerde: el vehículo debe estar a paz y salvo en multas para la revisión.',
-  'Nuestro horario de atención es de lunes a sábado de 8:00 a.m. a 5:00 p.m.',
+  'Nuestro horario de atención es de lunes a sábado de 6:00 a.m. a 6:00 p.m.',
   'Por su seguridad y la de los demás, conduzca con responsabilidad.',
   'Gracias por preferirnos. ¡Lo atendemos en breve!',
 ]
