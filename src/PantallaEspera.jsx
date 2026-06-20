@@ -47,8 +47,6 @@ export default function PantallaEspera() {
   const [heroKey,  setHeroKey] = useState(0)
   const [flashKey, setFlashKey]= useState(0)
   const [clock,    setClock]   = useState({ time: '', date: '' })
-  const [audioOk,  setAudioOk] = useState(false)
-
   const stageRef    = useRef(null)
   const prevIdRef   = useRef(null)
   const speechIdRef = useRef('INIT')
@@ -125,9 +123,6 @@ export default function PantallaEspera() {
     const turnoHablado = String(current.numero).padStart(3, '0').split('').join(' ')
     const texto = `Turno ${turnoHablado}, por favor acérquese a entrega de resultado.`
 
-    // Si el usuario aún no ha interactuado, encolar para después
-    if (!audioOk) return
-
     const hablar = () => {
       const utterance = new SpeechSynthesisUtterance(texto)
       const voces = synth.getVoices()
@@ -144,43 +139,12 @@ export default function PantallaEspera() {
     } else {
       synth.addEventListener('voiceschanged', hablar, { once: true })
     }
-  }, [current, audioOk])
+  }, [current])
 
   const cat = current ? CATS[current.codigo] : null
 
-  const activarAudio = () => {
-    const synth = window.speechSynthesis
-    if (!synth) return
-    const u = new SpeechSynthesisUtterance(' ')
-    u.volume = 0
-    synth.speak(u)
-    setAudioOk(true)
-  }
-
-  // Cualquier tecla también activa el audio (para control remoto de TV)
-  useEffect(() => {
-    if (audioOk) return
-    const handler = () => activarAudio()
-    window.addEventListener('keydown', handler, { once: true })
-    return () => window.removeEventListener('keydown', handler)
-  }, [audioOk])
-
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: D.bg, position: 'relative', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-
-      {/* Overlay de activación — clic/toque en cualquier punto o cualquier tecla */}
-      {!audioOk && (
-        <div
-          onClick={activarAudio}
-          style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)', cursor: 'pointer' }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '36px 52px', borderRadius: 20, background: '#F59E0B', color: '#1A1000', fontFamily: 'inherit', boxShadow: '0 8px 32px rgba(245,158,11,.45)', pointerEvents: 'none' }}>
-            <span style={{ fontSize: 48 }}>🔊</span>
-            <span style={{ fontSize: 22, fontWeight: 800 }}>Toca cualquier parte de la pantalla</span>
-            <span style={{ fontSize: 14, fontWeight: 500, opacity: 0.75 }}>o presiona cualquier tecla para activar el audio</span>
-          </div>
-        </div>
-      )}
 
       {/* Flash de color al cambiar turno */}
       {cat && (
