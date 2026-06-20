@@ -33,6 +33,12 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #fff
   40%  { transform: scale(.96); }
   100% { transform: scale(1); }
 }
+@keyframes avisoFade {
+  0%   { opacity: 0; transform: translateY(7px); }
+  10%  { opacity: 1; transform: translateY(0); }
+  85%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-7px); }
+}
 
 input:focus { outline: none; }
 

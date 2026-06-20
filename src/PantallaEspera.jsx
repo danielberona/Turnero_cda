@@ -42,11 +42,12 @@ const fmt12h = (d) => {
 }
 
 export default function PantallaEspera() {
-  const [current, setCurrent]  = useState(null)
-  const [waiting, setWaiting]  = useState([])
-  const [heroKey,  setHeroKey] = useState(0)
-  const [flashKey, setFlashKey]= useState(0)
-  const [clock,    setClock]   = useState({ time: '', date: '' })
+  const [current,  setCurrent]  = useState(null)
+  const [waiting,  setWaiting]  = useState([])
+  const [heroKey,  setHeroKey]  = useState(0)
+  const [flashKey, setFlashKey] = useState(0)
+  const [clock,    setClock]    = useState({ time: '', date: '' })
+  const [avisoIdx, setAvisoIdx] = useState(0)
   const stageRef    = useRef(null)
   const prevIdRef   = useRef(null)
   const speechIdRef = useRef('INIT')
@@ -102,9 +103,13 @@ export default function PantallaEspera() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos' }, loadData)
       .subscribe()
 
+    // Ciclo de avisos: uno cada 7 s
+    const avisoT = setInterval(() => setAvisoIdx(i => (i + 1) % AVISOS.length), 7000)
+
     return () => {
       window.removeEventListener('resize', fitStage)
       clearInterval(clockT)
+      clearInterval(avisoT)
       canal.unsubscribe()
     }
   }, [])
@@ -264,11 +269,12 @@ export default function PantallaEspera() {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F59E0B', animation: 'blink 1.6s ease-in-out infinite', flexShrink: 0 }} />
             <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: '#F59E0B', whiteSpace: 'nowrap' }}>Aviso</span>
           </div>
-          <div style={{ flex: 1, overflow: 'hidden', height: '100%', display: 'flex', alignItems: 'center' }}>
+          <div style={{ flex: 1, overflow: 'hidden', height: '100%', display: 'flex', alignItems: 'center', padding: '0 28px' }}>
             <span
-              style={{ display: 'inline-block', whiteSpace: 'nowrap', fontSize: 21, fontWeight: 500, color: D.txt2, animation: 'marqueeScroll 55s linear infinite' }}
+              key={avisoIdx}
+              style={{ fontSize: 21, fontWeight: 500, color: D.txt2, animation: 'avisoFade 7s ease forwards', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', width: '100%' }}
             >
-              {AVISOS.join('   ·   ')}
+              {AVISOS[avisoIdx]}
             </span>
           </div>
         </footer>
