@@ -47,6 +47,7 @@ export default function PantallaEspera() {
   const [heroKey,  setHeroKey] = useState(0)
   const [flashKey, setFlashKey]= useState(0)
   const [clock,    setClock]   = useState({ time: '', date: '' })
+  const [audioOk,  setAudioOk] = useState(false)
 
   const stageRef    = useRef(null)
   const prevIdRef   = useRef(null)
@@ -124,9 +125,11 @@ export default function PantallaEspera() {
     const turnoHablado = String(current.numero).padStart(3, '0').split('').join(' ')
     const texto = `Turno ${turnoHablado}, por favor acérquese a entrega de resultado.`
 
+    // Si el usuario aún no ha interactuado, encolar para después
+    if (!audioOk) return
+
     const hablar = () => {
       const utterance = new SpeechSynthesisUtterance(texto)
-      // Prefiere voz en español; si no hay, usa la que esté disponible
       const voces = synth.getVoices()
       const voz = voces.find(v => v.lang.startsWith('es')) ?? voces[0] ?? null
       if (voz) utterance.voice = voz
@@ -136,18 +139,41 @@ export default function PantallaEspera() {
       synth.speak(utterance)
     }
 
-    // Las voces pueden no estar listas aún (Chrome las carga async)
     if (synth.getVoices().length > 0) {
       hablar()
     } else {
       synth.addEventListener('voiceschanged', hablar, { once: true })
     }
-  }, [current])
+  }, [current, audioOk])
 
   const cat = current ? CATS[current.codigo] : null
 
+  const activarAudio = () => {
+    // Un utterance vacío en respuesta a un clic desbloquea el audio en el navegador
+    const synth = window.speechSynthesis
+    if (!synth) return
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    synth.speak(u)
+    setAudioOk(true)
+  }
+
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: D.bg, position: 'relative', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+
+      {/* Botón de activación de audio (se oculta tras el primer clic) */}
+      {!audioOk && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)' }}>
+          <button
+            onClick={activarAudio}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '36px 52px', borderRadius: 20, border: 'none', background: '#F59E0B', color: '#1A1000', fontFamily: 'inherit', cursor: 'pointer', boxShadow: '0 8px 32px rgba(245,158,11,.45)' }}
+          >
+            <span style={{ fontSize: 48 }}>🔊</span>
+            <span style={{ fontSize: 22, fontWeight: 800 }}>Activar audio</span>
+            <span style={{ fontSize: 14, fontWeight: 500, opacity: 0.75 }}>Toca para habilitar los anuncios de voz</span>
+          </button>
+        </div>
+      )}
 
       {/* Flash de color al cambiar turno */}
       {cat && (
