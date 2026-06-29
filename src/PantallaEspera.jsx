@@ -62,12 +62,15 @@ export default function PantallaEspera() {
 
   // ── Carga datos de Supabase ───────────────────────────────────────────────
   const loadData = async () => {
-    const [{ data: llamados }, { data: espera }] = await Promise.all([
+    const [{ data: llamados }, { data: espera }, { data: pendientes }] = await Promise.all([
       supabase
         .from('turnos').select('*').eq('estado', 'llamado')
         .order('llamado_en', { ascending: false }).limit(1),
       supabase
         .from('turnos').select('*').eq('estado', 'esperando')
+        .order('creado_en', { ascending: true }),
+      supabase
+        .from('turnos').select('*').eq('estado', 'pendiente_resultados')
         .order('creado_en', { ascending: true }),
     ])
 
@@ -78,7 +81,10 @@ export default function PantallaEspera() {
       if (nuevo) setFlashKey(k => k + 1)
     }
     setCurrent(nuevo)
-    setWaiting(espera ?? [])
+    const combined = [...(espera ?? []), ...(pendientes ?? [])].sort(
+      (a, b) => new Date(a.creado_en) - new Date(b.creado_en)
+    )
+    setWaiting(combined)
   }
 
   useEffect(() => {
@@ -241,15 +247,24 @@ export default function PantallaEspera() {
                 </div>
               ) : waiting.map((t, i) => {
                 const tc = CATS[t.codigo]
+                const isPendiente = t.estado === 'pendiente_resultados'
                 return (
                   <div key={t.id}
-                    style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '15px 14px', borderRadius: 14, borderBottom: i < waiting.length - 1 ? `1px solid ${D.border}` : 'none' }}>
-                    <div style={{ width: 5, height: 64, borderRadius: 99, background: tc.color, flexShrink: 0 }} />
+                    style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '15px 14px', borderRadius: 14, borderBottom: i < waiting.length - 1 ? `1px solid ${D.border}` : 'none', background: isPendiente ? '#FFFBEB' : 'transparent' }}>
+                    <div style={{ width: 5, height: 64, borderRadius: 99, background: isPendiente ? '#F59E0B' : tc.color, flexShrink: 0 }} />
                     <span style={{ fontSize: 56, fontWeight: 900, color: tc.color, fontVariantNumeric: 'tabular-nums', minWidth: 170, flexShrink: 0 }}>{code(t)}</span>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: 26, fontWeight: 700, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
-                      <div style={{ fontSize: 14, fontFamily: 'ui-monospace, monospace', fontWeight: 700, letterSpacing: '.07em', color: D.txt3, background: D.surf2, border: `1px solid ${D.border}`, borderRadius: 8, padding: '2px 10px', marginTop: 5, display: 'inline-block' }}>
-                        {t.placa_vehiculo}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 14, fontFamily: 'ui-monospace, monospace', fontWeight: 700, letterSpacing: '.07em', color: D.txt3, background: D.surf2, border: `1px solid ${D.border}`, borderRadius: 8, padding: '2px 10px', display: 'inline-block' }}>
+                          {t.placa_vehiculo}
+                        </div>
+                        {isPendiente && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 12px', borderRadius: 999, background: '#FEF3C7', border: '1.5px solid #FDE68A' }}>
+                            <span style={{ fontSize: 14 }}>⏱</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: '#D97706' }}>Resultados pendientes</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, background: tc.color + '0E', border: `1.5px solid ${tc.color}28` }}>

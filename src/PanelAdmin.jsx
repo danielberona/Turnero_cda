@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Car, Truck, GraduationCap, RefreshCcw,
   LogOut, X, Clock, Check, ChevronRight,
-  Bell, Users,
+  Bell, Users, Timer, PhoneCall,
 } from 'lucide-react'
-import { supabase, registrarTurno, llamarSiguiente, marcarAtendido } from './supabase'
+import { supabase, registrarTurno, llamarSiguiente, marcarAtendido, marcarPendienteResultados, reLlamarTurno } from './supabase'
 
 // ── Paleta clínica ───────────────────────────────────────────────────────────
 const D = {
@@ -43,12 +43,16 @@ export default function PanelAdmin({ onLogout }) {
 
   // ── Carga datos ────────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
-    const [{ data: esperando }, { data: llamados }] = await Promise.all([
+    const [{ data: esperando }, { data: pendientes }, { data: llamados }] = await Promise.all([
       supabase.from('turnos').select('*').eq('estado', 'esperando').order('creado_en'),
+      supabase.from('turnos').select('*').eq('estado', 'pendiente_resultados').order('creado_en'),
       supabase.from('turnos').select('*').eq('estado', 'llamado'),
     ])
     const qs = { A: [], R: [], B: [], V: [] }
-    esperando?.forEach(t => { if (t.codigo in qs) qs[t.codigo].push(t) })
+    const all = [...(esperando ?? []), ...(pendientes ?? [])].sort(
+      (a, b) => new Date(a.creado_en) - new Date(b.creado_en)
+    )
+    all.forEach(t => { if (t.codigo in qs) qs[t.codigo].push(t) })
     setQueues(qs)
     const cur = { A: null, R: null, B: null, V: null }
     llamados?.forEach(t => { cur[t.codigo] = t })
@@ -89,6 +93,21 @@ export default function PanelAdmin({ onLogout }) {
   const handleLlamar = async (k) => {
     try { await llamarSiguiente(k); await loadData() }
     catch { alert('No hay turnos en espera para esta categoría.') }
+  }
+
+  const handleFinalizar = async (id) => {
+    try { await marcarAtendido(id); await loadData() }
+    catch (e) { alert('Error: ' + e.message) }
+  }
+
+  const handlePendiente = async (id) => {
+    try { await marcarPendienteResultados(id); await loadData() }
+    catch (e) { alert('Error: ' + e.message) }
+  }
+
+  const handleReLlamar = async (id) => {
+    try { await reLlamarTurno(id); await loadData() }
+    catch (e) { alert('Error al re-llamar: ' + e.message) }
   }
 
   const handleCancelar = async (id) => {
@@ -232,7 +251,8 @@ export default function PanelAdmin({ onLogout }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
             {Object.entries(CATS).map(([k, c]) => {
               const { Icon } = c
-              const q = queues[k], cur = current[k], can = q.length > 0
+              const q = queues[k], cur = current[k]
+              const can = q.some(t => t.estado === 'esperando')
               return (
                 <div key={k} style={{ background: D.surf, border: `1px solid ${D.border}`, borderTop: `3px solid ${c.color}`, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: `0 2px 8px ${D.shadow}` }}>
 
@@ -248,25 +268,32 @@ export default function PanelAdmin({ onLogout }) {
 
                   {/* En llamado */}
                   <div style={{ margin: '12px 12px 0', padding: '13px', borderRadius: 12, background: cur ? c.color + '06' : D.surf2, border: `1px solid ${cur ? c.color + '25' : D.border}`, minHeight: 100, transition: 'all .3s' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: cur ? c.color : D.txt3 }}>
-                        <Bell size={10} />
-                        En llamado
-                      </div>
-                      {cur && (
-                        <button onClick={() => handleCancelar(cur.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', border: `1px solid ${D.border}`, borderRadius: 6, background: 'transparent', color: D.txt3, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}
-                          onMouseOver={e => { e.currentTarget.style.borderColor = '#FCA5A5'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = '#FEF2F2' }}
-                          onMouseOut={e  => { e.currentTarget.style.borderColor = D.border;  e.currentTarget.style.color = D.txt3;    e.currentTarget.style.background = 'transparent' }}>
-                          <X size={9} /> Cancelar
-                        </button>
-                      )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: cur ? c.color : D.txt3, marginBottom: 8 }}>
+                      <Bell size={10} />
+                      En llamado
                     </div>
                     {cur ? (
                       <>
                         <div style={{ fontSize: 38, fontWeight: 900, lineHeight: 1, color: c.color, fontVariantNumeric: 'tabular-nums' }}>{code(cur)}</div>
                         <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cur.nombre_cliente}</div>
                         <div style={{ fontSize: 11, color: D.txt2, fontFamily: 'ui-monospace, monospace', letterSpacing: '.05em', marginTop: 2 }}>{cur.placa_vehiculo}</div>
+                        {/* Botones de decisión */}
+                        <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+                          <button
+                            onClick={() => handleFinalizar(cur.id)}
+                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 4px', border: '1px solid #BBF7D0', borderRadius: 8, background: '#F0FDF4', color: '#16A34A', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}
+                            onMouseOver={e => { e.currentTarget.style.background = '#DCFCE7'; e.currentTarget.style.borderColor = '#86EFAC' }}
+                            onMouseOut={e  => { e.currentTarget.style.background = '#F0FDF4'; e.currentTarget.style.borderColor = '#BBF7D0' }}>
+                            <Check size={11} /> Finalizado
+                          </button>
+                          <button
+                            onClick={() => handlePendiente(cur.id)}
+                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 4px', border: '1px solid #FDE68A', borderRadius: 8, background: '#FFFBEB', color: '#D97706', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', lineHeight: 1.2, textAlign: 'center' }}
+                            onMouseOver={e => { e.currentTarget.style.background = '#FEF3C7'; e.currentTarget.style.borderColor = '#FCD34D' }}
+                            onMouseOut={e  => { e.currentTarget.style.background = '#FFFBEB'; e.currentTarget.style.borderColor = '#FDE68A' }}>
+                            <Timer size={11} /> No estaba
+                          </button>
+                        </div>
                       </>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px 0' }}>
@@ -297,24 +324,43 @@ export default function PanelAdmin({ onLogout }) {
                   <div style={{ padding: '2px 10px 12px', maxHeight: 248, overflowY: 'auto' }}>
                     {q.length === 0 ? (
                       <div style={{ padding: '14px 8px', fontSize: 12, color: D.txt3, textAlign: 'center' }}>Sin turnos en espera</div>
-                    ) : q.map(t => (
-                      <div key={t.id}
-                        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 9, transition: 'background .12s' }}
-                        onMouseOver={e => e.currentTarget.style.background = D.surf2}
-                        onMouseOut={e  => e.currentTarget.style.background = 'transparent'}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: c.color, fontVariantNumeric: 'tabular-nums', minWidth: 44, flexShrink: 0 }}>{code(t)}</span>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
-                          <div style={{ fontSize: 11, color: D.txt3, fontFamily: 'ui-monospace, monospace' }}>{t.placa_vehiculo}</div>
+                    ) : q.map(t => {
+                      const isPendiente = t.estado === 'pendiente_resultados'
+                      return (
+                        <div key={t.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 9, transition: 'background .12s', background: isPendiente ? '#FFFBEB' : 'transparent' }}
+                          onMouseOver={e => e.currentTarget.style.background = isPendiente ? '#FEF3C7' : D.surf2}
+                          onMouseOut={e  => e.currentTarget.style.background = isPendiente ? '#FFFBEB' : 'transparent'}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: c.color, fontVariantNumeric: 'tabular-nums', minWidth: 44, flexShrink: 0 }}>{code(t)}</span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: D.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nombre_cliente}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                              <div style={{ fontSize: 11, color: D.txt3, fontFamily: 'ui-monospace, monospace' }}>{t.placa_vehiculo}</div>
+                              {isPendiente && (
+                                <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#D97706', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 4, padding: '1px 5px', flexShrink: 0 }}>
+                                  Pendiente
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {isPendiente && (
+                            <button onClick={() => handleReLlamar(t.id)}
+                              style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#D97706', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}
+                              title="Re-llamar este turno"
+                              onMouseOver={e => { e.currentTarget.style.background = '#FEF3C7'; e.currentTarget.style.color = '#B45309' }}
+                              onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#D97706' }}>
+                              <PhoneCall size={11} />
+                            </button>
+                          )}
+                          <button onClick={() => handleCancelar(t.id)}
+                            style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: D.txt3, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}
+                            onMouseOver={e => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.color = '#EF4444' }}
+                            onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = D.txt3 }}>
+                            <X size={11} />
+                          </button>
                         </div>
-                        <button onClick={() => handleCancelar(t.id)}
-                          style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: D.txt3, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}
-                          onMouseOver={e => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.color = '#EF4444' }}
-                          onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = D.txt3 }}>
-                          <X size={11} />
-                        </button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
 
                 </div>

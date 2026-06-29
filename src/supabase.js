@@ -26,6 +26,17 @@ export async function marcarAtendido(id) {
   if (error) throw new Error(error.message)
 }
 
+export async function marcarPendienteResultados(id) {
+  const { error } = await supabase.rpc('marcar_pendiente_resultados', { p_id: id })
+  if (error) throw new Error(error.message)
+}
+
+export async function reLlamarTurno(id) {
+  const { data, error } = await supabase.rpc('llamar_turno_especifico', { p_id: id })
+  if (error) throw new Error(error.message)
+  return Array.isArray(data) ? data[0] : data
+}
+
 export function suscribirseACambios(callback) {
   return supabase
     .channel('turnos-realtime')

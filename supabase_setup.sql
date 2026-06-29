@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS turnos (
   nombre_cliente  text NOT NULL,
   cedula_cliente  text NOT NULL,
   estado          text NOT NULL DEFAULT 'esperando'
-                  CHECK (estado IN ('esperando', 'llamado', 'atendido')),
+                  CHECK (estado IN ('esperando', 'llamado', 'pendiente_resultados', 'atendido')),
   creado_en       timestamptz DEFAULT now(),
   llamado_en      timestamptz
 );
@@ -121,7 +121,49 @@ END;
 $$;
 
 
--- 3.3 marcar_atendido
+-- 3.3b llamar_turno_especifico
+-- Re-llama un turno específico en estado 'pendiente_resultados'.
+-- Si hay un turno 'llamado' del mismo código, lo marca 'atendido' primero.
+CREATE OR REPLACE FUNCTION llamar_turno_especifico(p_id uuid)
+RETURNS SETOF turnos
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_turno      turnos%ROWTYPE;
+  v_llamado_id uuid;
+BEGIN
+  SELECT * INTO v_turno
+    FROM turnos
+   WHERE id = p_id
+     AND estado = 'pendiente_resultados';
+
+  IF v_turno.id IS NULL THEN
+    RAISE EXCEPTION 'Turno % no encontrado o no está en pendiente_resultados', p_id;
+  END IF;
+
+  -- Finalizar el turno actualmente llamado del mismo código
+  SELECT id INTO v_llamado_id
+    FROM turnos
+   WHERE codigo = v_turno.codigo
+     AND estado = 'llamado'
+   LIMIT 1;
+
+  IF v_llamado_id IS NOT NULL THEN
+    UPDATE turnos SET estado = 'atendido' WHERE id = v_llamado_id;
+  END IF;
+
+  -- Re-llamar el turno específico
+  UPDATE turnos
+     SET estado     = 'llamado',
+         llamado_en = now()
+   WHERE id = p_id;
+
+  RETURN QUERY SELECT * FROM turnos WHERE id = p_id;
+END;
+$$;
+
+
+-- 3.4 marcar_atendido
 CREATE OR REPLACE FUNCTION marcar_atendido(p_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -139,8 +181,28 @@ END;
 $$;
 
 
--- 3.4 get_cola_por_categoria
--- Retorna para cada código: cantidad en espera y el turno actualmente llamado.
+-- 3.5 marcar_pendiente_resultados
+-- Pasa el turno de 'llamado' a 'pendiente_resultados'.
+CREATE OR REPLACE FUNCTION marcar_pendiente_resultados(p_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE turnos
+     SET estado = 'pendiente_resultados'
+   WHERE id = p_id
+     AND estado = 'llamado';
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Turno % no encontrado o no está en estado llamado', p_id;
+  END IF;
+END;
+$$;
+
+
+-- 3.6 get_cola_por_categoria
+-- Retorna para cada código: cantidad en espera (esperando + pendiente_resultados)
+-- y el turno actualmente llamado.
 CREATE OR REPLACE FUNCTION get_cola_por_categoria()
 RETURNS TABLE (
   codigo          varchar,
@@ -154,7 +216,6 @@ AS $$
 BEGIN
   RETURN QUERY
   WITH categorias AS (
-    -- Datos fijos de referencia
     SELECT 'A'::varchar AS codigo, 'Revisión Técnico-Mecánica'  AS categoria, '#2196F3' AS color
     UNION ALL
     SELECT 'R', 'Reinspección', '#FF9800'
@@ -166,7 +227,7 @@ BEGIN
   espera AS (
     SELECT t.codigo, COUNT(*) AS total
       FROM turnos t
-     WHERE t.estado = 'esperando'
+     WHERE t.estado IN ('esperando', 'pendiente_resultados')
      GROUP BY t.codigo
   ),
   llamados AS (
@@ -240,7 +301,9 @@ GRANT EXECUTE ON FUNCTION get_cola_por_categoria() TO anon;
 GRANT EXECUTE ON FUNCTION get_cola_por_categoria() TO authenticated;
 GRANT EXECUTE ON FUNCTION generar_numero_turno(varchar) TO authenticated;
 GRANT EXECUTE ON FUNCTION llamar_siguiente_turno(varchar) TO authenticated;
+GRANT EXECUTE ON FUNCTION llamar_turno_especifico(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION marcar_atendido(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION marcar_pendiente_resultados(uuid) TO authenticated;
 
 
 -- ============================================================
@@ -261,6 +324,18 @@ BEGIN
   END IF;
 END;
 $$;
+
+
+-- ============================================================
+-- 6. MIGRACIÓN — bases de datos ya existentes
+-- Ejecutar SOLO si la tabla turnos ya existe con el CHECK anterior.
+-- En instalaciones nuevas las secciones 2 y 3 ya incluyen el estado correcto.
+-- ============================================================
+
+-- 6.1 Ampliar el CHECK de estado para incluir 'pendiente_resultados'
+ALTER TABLE turnos DROP CONSTRAINT IF EXISTS turnos_estado_check;
+ALTER TABLE turnos ADD CONSTRAINT turnos_estado_check
+  CHECK (estado IN ('esperando', 'llamado', 'pendiente_resultados', 'atendido'));
 
 
 -- ============================================================
