@@ -120,6 +120,14 @@ export default function PantallaEspera() {
     }
   }, [])
 
+  // ── Keepalive: Chrome pausa el motor de síntesis tras inactividad ────────
+  useEffect(() => {
+    const synth = window.speechSynthesis
+    if (!synth) return
+    const id = setInterval(() => { if (synth.paused) synth.resume() }, 5000)
+    return () => clearInterval(id)
+  }, [])
+
   // ── Anuncio de voz al llamar turno ───────────────────────────────────────
   useEffect(() => {
     if (!current) return
@@ -135,14 +143,31 @@ export default function PantallaEspera() {
     const texto = `Turno ${turnoHablado}, por favor acérquese a entrega de resultado.`
 
     const hablar = () => {
-      const utterance = new SpeechSynthesisUtterance(texto)
       const voces = synth.getVoices()
-      const voz = voces.find(v => v.lang.startsWith('es')) ?? voces[0] ?? null
+      const voz = voces.find(v => v.lang === 'es-CO')
+        ?? voces.find(v => v.lang === 'es-419')
+        ?? voces.find(v => v.lang.startsWith('es'))
+        ?? voces[0]
+        ?? null
+
+      const utterance = new SpeechSynthesisUtterance(texto)
       if (voz) utterance.voice = voz
-      utterance.lang = 'es-CO'
-      utterance.rate = 0.92
+      utterance.lang  = 'es-CO'
+      utterance.rate  = 0.92
+      utterance.pitch = 1
+      utterance.volume = 1
+
+      // Reintentar una vez si hay error (fallo silencioso en algunos navegadores)
+      utterance.onerror = () => {
+        const u2 = new SpeechSynthesisUtterance(texto)
+        if (voz) u2.voice = voz
+        u2.lang = 'es-CO'; u2.rate = 0.92; u2.pitch = 1; u2.volume = 1
+        synth.speak(u2)
+      }
+
       synth.cancel()
-      synth.speak(utterance)
+      // Pequeño delay tras cancel para que el motor lo procese correctamente
+      setTimeout(() => synth.speak(utterance), 120)
     }
 
     if (synth.getVoices().length > 0) {
