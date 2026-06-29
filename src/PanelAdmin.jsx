@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Car, Truck, GraduationCap, RefreshCcw,
   LogOut, X, Clock, Check, ChevronRight,
-  Bell, Users, Timer, PhoneCall,
+  Bell, Users, Timer,
 } from 'lucide-react'
 import { supabase, registrarTurno, llamarSiguiente, marcarAtendido, marcarPendienteResultados, reLlamarTurno } from './supabase'
 
@@ -328,7 +328,9 @@ export default function PanelAdmin({ onLogout }) {
                       const isPendiente = t.estado === 'pendiente_resultados'
                       return (
                         <div key={t.id}
-                          style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 9, transition: 'background .12s', background: isPendiente ? '#FFFBEB' : 'transparent' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 9, transition: 'background .12s', background: isPendiente ? '#FFFBEB' : 'transparent', cursor: isPendiente ? 'pointer' : 'default' }}
+                          onDoubleClick={() => { if (isPendiente) handleReLlamar(t.id) }}
+                          title={isPendiente ? 'Doble clic para re-llamar' : undefined}
                           onMouseOver={e => e.currentTarget.style.background = isPendiente ? '#FEF3C7' : D.surf2}
                           onMouseOut={e  => e.currentTarget.style.background = isPendiente ? '#FFFBEB' : 'transparent'}>
                           <span style={{ fontSize: 12, fontWeight: 800, color: c.color, fontVariantNumeric: 'tabular-nums', minWidth: 44, flexShrink: 0 }}>{code(t)}</span>
@@ -343,15 +345,6 @@ export default function PanelAdmin({ onLogout }) {
                               )}
                             </div>
                           </div>
-                          {isPendiente && (
-                            <button onClick={() => handleReLlamar(t.id)}
-                              style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#D97706', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}
-                              title="Re-llamar este turno"
-                              onMouseOver={e => { e.currentTarget.style.background = '#FEF3C7'; e.currentTarget.style.color = '#B45309' }}
-                              onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#D97706' }}>
-                              <PhoneCall size={11} />
-                            </button>
-                          )}
                           <button onClick={() => handleCancelar(t.id)}
                             style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: D.txt3, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}
                             onMouseOver={e => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.color = '#EF4444' }}
