@@ -42,12 +42,13 @@ const fmt12h = (d) => {
 }
 
 export default function PantallaEspera() {
-  const [current,  setCurrent]  = useState(null)
-  const [waiting,  setWaiting]  = useState([])
-  const [heroKey,  setHeroKey]  = useState(0)
-  const [flashKey, setFlashKey] = useState(0)
-  const [clock,    setClock]    = useState({ time: '', date: '' })
-  const [avisoIdx, setAvisoIdx] = useState(0)
+  const [current,     setCurrent]     = useState(null)
+  const [waiting,     setWaiting]     = useState([])
+  const [heroKey,     setHeroKey]     = useState(0)
+  const [flashKey,    setFlashKey]    = useState(0)
+  const [clock,       setClock]       = useState({ time: '', date: '' })
+  const [avisoIdx,    setAvisoIdx]    = useState(0)
+  const [audioActivo, setAudioActivo] = useState(false)
   const stageRef    = useRef(null)
   const prevIdRef   = useRef(null)
   const speechIdRef = useRef('INIT')
@@ -120,16 +121,28 @@ export default function PantallaEspera() {
     }
   }, [])
 
+  // ── Desbloqueo de audio (gesto obligatorio en Mac/Safari/Chrome) ─────────
+  const activarAudio = () => {
+    const synth = window.speechSynthesis
+    if (!synth) { setAudioActivo(true); return }
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    synth.speak(u)
+    setAudioActivo(true)
+  }
+
   // ── Keepalive: Chrome pausa el motor de síntesis tras inactividad ────────
   useEffect(() => {
+    if (!audioActivo) return
     const synth = window.speechSynthesis
     if (!synth) return
     const id = setInterval(() => { if (synth.paused) synth.resume() }, 5000)
     return () => clearInterval(id)
-  }, [])
+  }, [audioActivo])
 
   // ── Anuncio de voz al llamar turno ───────────────────────────────────────
   useEffect(() => {
+    if (!audioActivo) return
     if (!current) return
     const isFirstLoad = speechIdRef.current === 'INIT'
     if (current.id === speechIdRef.current) return
@@ -181,6 +194,25 @@ export default function PantallaEspera() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: D.bg, position: 'relative', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+
+      {/* Overlay de activación de audio — obligatorio en Mac/Safari/Chrome */}
+      {!audioActivo && (
+        <div
+          onClick={activarAudio}
+          style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15,23,42,.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28, cursor: 'pointer', backdropFilter: 'blur(6px)' }}
+        >
+          <div style={{ fontSize: 72, lineHeight: 1 }}>🔊</div>
+          <div style={{ fontSize: 38, fontWeight: 900, color: '#FFFFFF', letterSpacing: '-.02em', textAlign: 'center' }}>
+            Toca para activar el audio
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 500, color: 'rgba(255,255,255,.6)', textAlign: 'center' }}>
+            El sistema anunciará los turnos por voz
+          </div>
+          <div style={{ marginTop: 8, padding: '18px 48px', borderRadius: 16, background: '#F59E0B', color: '#1A1000', fontSize: 22, fontWeight: 800, boxShadow: '0 8px 32px rgba(245,158,11,.45)' }}>
+            Activar audio
+          </div>
+        </div>
+      )}
 
       {/* Flash de color al cambiar turno */}
       {cat && (
